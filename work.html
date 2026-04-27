@@ -826,26 +826,31 @@ function loginBuildSelect(cfg) {
 async function loginLoadConfig() {
   document.getElementById('login-loading').style.display = 'block';
   document.getElementById('login-main').style.display = 'none';
+
+  function showForm(cfg) {
+    loginBuildSelect(cfg);
+    document.getElementById('login-loading').style.display = 'none';
+    document.getElementById('login-main').style.display = 'flex';
+  }
+
+  // 3초 타임아웃 - Firebase 응답 없으면 기본값으로 표시
+  const timeout = setTimeout(() => showForm(loginGetConfig()), 3000);
+
   try {
-    // Firebase에서 항상 최신 config 로드 (URL 하드코딩)
     const res = await fetch(`${CONFIG_FB_URL}/config.json?t=${Date.now()}`);
+    clearTimeout(timeout);
     if (res.ok) {
       const data = await res.json();
       if (data && data.workers) {
         localStorage.setItem('sys_config_v1', JSON.stringify(data));
-        localStorage.setItem('sys_fb_url', data.firebaseUrl || CONFIG_FB_URL);
-        loginBuildSelect(data);
-        document.getElementById('login-loading').style.display = 'none';
-        document.getElementById('login-main').style.display = 'flex';
+        if (data.firebaseUrl) localStorage.setItem('sys_fb_url', data.firebaseUrl);
+        showForm(data);
         return;
       }
     }
   } catch {}
-  // Firebase 실패 시 로컬 config 사용
-  const localCfg = loginGetConfig();
-  loginBuildSelect(localCfg);
-  document.getElementById('login-loading').style.display = 'none';
-  document.getElementById('login-main').style.display = 'flex';
+  clearTimeout(timeout);
+  showForm(loginGetConfig());
 }
 
 function doLogin() {
