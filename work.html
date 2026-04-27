@@ -428,12 +428,19 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
     <div class="login-logo">🧊</div>
     <div class="login-title">다야냉장팀</div>
     <div class="login-sub">작업현황표 시스템</div>
-    <select class="login-sel" id="login-name">
-      <option value="">이름을 선택하세요</option>
-    </select>
-    <input class="login-inp" id="login-pw" type="password" placeholder="비밀번호 입력" maxlength="10">
-    <button class="login-btn" onclick="doLogin()">로그인</button>
-    <div class="login-err" id="login-err">이름 또는 비밀번호가 틀렸습니다</div>
+    <!-- 로딩 중 -->
+    <div id="login-loading" style="text-align:center;color:#5a7a99;font-size:13px;padding:10px 0;">
+      ⏳ 작업자 목록 불러오는 중...
+    </div>
+    <!-- 로그인 폼 -->
+    <div id="login-main" style="display:none;flex-direction:column;gap:10px;">
+      <select class="login-sel" id="login-name">
+        <option value="">이름을 선택하세요</option>
+      </select>
+      <input class="login-inp" id="login-pw" type="password" placeholder="비밀번호 입력" maxlength="10">
+      <button class="login-btn" onclick="doLogin()">로그인</button>
+      <div class="login-err" id="login-err">이름 또는 비밀번호가 틀렸습니다</div>
+    </div>
   </div>
 </div>
 
@@ -800,6 +807,7 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
 <script>
 // ══ 로그인 시스템 ══
 const LOGIN_KEY = 'daya_login_v1';
+const CONFIG_FB_URL = 'https://ice-work-d8045-default-rtdb.asia-southeast1.firebasedatabase.app';
 
 function loginGetConfig() {
   try {
@@ -808,29 +816,36 @@ function loginGetConfig() {
   } catch { return null; }
 }
 
-function loginBuildSelect() {
-  const cfg = loginGetConfig();
+function loginBuildSelect(cfg) {
   const sel = document.getElementById('login-name');
-  const workers = cfg?.workerPasswords
-    ? Object.keys(cfg.workerPasswords)
-    : (cfg?.workers || ['이지철','이성재','한태준','최태원','김제선','김성영','오영석']);
+  const workers = cfg?.workers || ['이지철','이성재','한태준','최태원','김제선','김성영','오영석'];
   sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
     workers.map(w => `<option value="${w}">${w}</option>`).join('');
 }
 
 async function loginLoadConfig() {
-  // Firebase에서 최신 config 로드 시도
-  const fbUrl = localStorage.getItem('sys_fb_url') || '';
-  if (fbUrl) {
-    try {
-      const res = await fetch(`${fbUrl.replace(/\/+$/,'')}/config.json?t=${Date.now()}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data) localStorage.setItem('sys_config_v1', JSON.stringify(data));
+  document.getElementById('login-loading').style.display = 'block';
+  document.getElementById('login-main').style.display = 'none';
+  try {
+    // Firebase에서 항상 최신 config 로드 (URL 하드코딩)
+    const res = await fetch(`${CONFIG_FB_URL}/config.json?t=${Date.now()}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.workers) {
+        localStorage.setItem('sys_config_v1', JSON.stringify(data));
+        localStorage.setItem('sys_fb_url', data.firebaseUrl || CONFIG_FB_URL);
+        loginBuildSelect(data);
+        document.getElementById('login-loading').style.display = 'none';
+        document.getElementById('login-main').style.display = 'flex';
+        return;
       }
-    } catch {}
-  }
-  loginBuildSelect();
+    }
+  } catch {}
+  // Firebase 실패 시 로컬 config 사용
+  const localCfg = loginGetConfig();
+  loginBuildSelect(localCfg);
+  document.getElementById('login-loading').style.display = 'none';
+  document.getElementById('login-main').style.display = 'flex';
 }
 
 function doLogin() {
@@ -869,8 +884,8 @@ function checkLogin() {
   if (saved) {
     try {
       const {name, ts} = JSON.parse(saved);
-      // 12시간 이내면 자동 로그인
       if (Date.now() - ts < 12 * 60 * 60 * 1000 && name) {
+        // 작업자 드롭다운 반영
         const workerSel = document.getElementById('worker-select');
         if (workerSel) {
           for (const opt of workerSel.options) {
@@ -882,6 +897,7 @@ function checkLogin() {
       }
     } catch {}
   }
+  // 자동로그인 실패 → Firebase에서 config 로드 후 로그인 화면
   loginLoadConfig();
 }
 
