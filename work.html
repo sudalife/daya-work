@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>작업현황표</title>
 <style>
+/* ══ 로그인 오버레이 ══ */
+#login-overlay{position:fixed;inset:0;background:#0b0f1a;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;}
+#login-overlay.hide{display:none;}
+.login-box{background:#111827;border:1.5px solid #1e2d45;border-radius:20px;padding:28px 24px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px;}
+.login-logo{text-align:center;font-size:40px;margin-bottom:4px;}
+.login-title{text-align:center;font-size:20px;font-weight:900;color:#fff;}
+.login-sub{text-align:center;font-size:12px;color:#5a7a99;margin-top:-8px;}
+.login-sel{width:100%;background:#1a2235;border:1.5px solid #1e2d45;border-radius:10px;color:#e2eaf5;font-size:15px;font-weight:700;padding:12px 14px;outline:none;font-family:inherit;cursor:pointer;}
+.login-inp{width:100%;background:#1a2235;border:1.5px solid #1e2d45;border-radius:10px;color:#e2eaf5;font-size:16px;font-weight:700;padding:12px 14px;outline:none;font-family:inherit;letter-spacing:4px;}
+.login-inp::placeholder{letter-spacing:0;font-weight:400;color:#5a7a99;}
+.login-btn{width:100%;background:linear-gradient(135deg,#3b9eff,#2563eb);color:#fff;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;}
+.login-btn:active{opacity:.85;}
+.login-err{text-align:center;font-size:13px;color:#ef4444;font-weight:700;display:none;}
+.login-err.show{display:block;}
+</style>
 :root {
   --bg:#0f1923; --card:#1a2634; --card2:#1e2e40;
   --a1:#3b9eff; --a2:#ff6b35; --a3:#2ecc71; --a4:#a78bfa; --a5:#ffd600; --a6:#ff6b9d;
@@ -407,6 +422,21 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
 </head>
 <body>
 
+<!-- ══ 로그인 오버레이 ══ -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">🧊</div>
+    <div class="login-title">다야냉장팀</div>
+    <div class="login-sub">작업현황표 시스템</div>
+    <select class="login-sel" id="login-name">
+      <option value="">이름을 선택하세요</option>
+    </select>
+    <input class="login-inp" id="login-pw" type="password" placeholder="비밀번호 입력" maxlength="10">
+    <button class="login-btn" onclick="doLogin()">로그인</button>
+    <div class="login-err" id="login-err">이름 또는 비밀번호가 틀렸습니다</div>
+  </div>
+</div>
+
 <!-- 색 선택 팝업 -->
 <div class="color-overlay" id="colorOverlay" onclick="closeColorPicker()">
   <div class="color-popup" onclick="event.stopPropagation()">
@@ -715,7 +745,7 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
 
   <div class="att-header-att">
     <div class="att-header-top">
-      <div class="att-team-badge" id="att-team-badge">🧊 다야냉장팀</div>
+      <div class="att-team-badge">🧊 다야냉장팀</div>
       <div class="att-today-date" id="att-today-label">—</div>
     </div>
     <div class="att-month-nav">
@@ -768,6 +798,98 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
 <div class="toast" id="toast"></div>
 
 <script>
+// ══ 로그인 시스템 ══
+const LOGIN_KEY = 'daya_login_v1';
+
+function loginGetConfig() {
+  try {
+    const s = localStorage.getItem('sys_config_v1');
+    return s ? JSON.parse(s) : null;
+  } catch { return null; }
+}
+
+function loginBuildSelect() {
+  const cfg = loginGetConfig();
+  const sel = document.getElementById('login-name');
+  const workers = cfg?.workerPasswords
+    ? Object.keys(cfg.workerPasswords)
+    : (cfg?.workers || ['이지철','이성재','한태준','최태원','김제선','김성영','오영석']);
+  sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
+    workers.map(w => `<option value="${w}">${w}</option>`).join('');
+}
+
+async function loginLoadConfig() {
+  // Firebase에서 최신 config 로드 시도
+  const fbUrl = localStorage.getItem('sys_fb_url') || '';
+  if (fbUrl) {
+    try {
+      const res = await fetch(`${fbUrl.replace(/\/+$/,'')}/config.json?t=${Date.now()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data) localStorage.setItem('sys_config_v1', JSON.stringify(data));
+      }
+    } catch {}
+  }
+  loginBuildSelect();
+}
+
+function doLogin() {
+  const name = document.getElementById('login-name').value.trim();
+  const pw = document.getElementById('login-pw').value.trim();
+  const errEl = document.getElementById('login-err');
+
+  if (!name) { errEl.textContent = '이름을 선택하세요'; errEl.classList.add('show'); return; }
+
+  const cfg = loginGetConfig();
+  const passwords = cfg?.workerPasswords || {};
+
+  // 비번이 설정되어 있으면 확인, 없으면 누구나 통과
+  if (Object.keys(passwords).length > 0) {
+    const correctPw = passwords[name];
+    if (!correctPw) { errEl.textContent = '등록되지 않은 작업자입니다'; errEl.classList.add('show'); return; }
+    if (correctPw !== pw) { errEl.textContent = '비밀번호가 틀렸습니다'; errEl.classList.add('show'); return; }
+  }
+
+  errEl.classList.remove('show');
+  localStorage.setItem(LOGIN_KEY, JSON.stringify({name, ts: Date.now()}));
+
+  // 작업자 드롭다운에 선택 반영
+  const workerSel = document.getElementById('worker-select');
+  if (workerSel) {
+    for (const opt of workerSel.options) {
+      if (opt.value === name) { workerSel.value = name; break; }
+    }
+  }
+
+  document.getElementById('login-overlay').classList.add('hide');
+}
+
+function checkLogin() {
+  const saved = localStorage.getItem(LOGIN_KEY);
+  if (saved) {
+    try {
+      const {name, ts} = JSON.parse(saved);
+      // 12시간 이내면 자동 로그인
+      if (Date.now() - ts < 12 * 60 * 60 * 1000 && name) {
+        const workerSel = document.getElementById('worker-select');
+        if (workerSel) {
+          for (const opt of workerSel.options) {
+            if (opt.value === name) { workerSel.value = name; break; }
+          }
+        }
+        document.getElementById('login-overlay').classList.add('hide');
+        return;
+      }
+    } catch {}
+  }
+  loginLoadConfig();
+}
+
+// Enter 키로 로그인
+document.getElementById('login-pw').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
 // ══ 탭 전환 ══
 let curTab = 0;
 function switchTab(i) {
@@ -1047,7 +1169,7 @@ for (let i = 1; i <= 40; i++) {
 }
 
 // 직배 (종근당 수량 포함)
-let JB_NAMES = [
+const JB_NAMES = [
   '종로팔팔','종로카톨릭','종로365의원','종로5가미래',
   '동탄아이엠유','강서아이엠유','필모어','크리스트','당산수',
   '수원더셀','서울뷰세종','가산연합'];
@@ -1379,23 +1501,40 @@ function saveData(autoName){
 }
 
 // ══ Firebase 실시간 동기화 (변동 있을 때만) ══
-// 설정관리에서 저장한 URL 우선, 없으면 기존 URL 사용
 const FB_URL = (() => {
   const u = localStorage.getItem('sys_fb_url') || localStorage.getItem('dashboard_fb_url') || '';
   if (u) return u.replace(/\/+$/, '') + '/';
-  try {
-    const s = localStorage.getItem('sys_config_v1');
-    if (s) { const c = JSON.parse(s); if (c.firebaseUrl) return c.firebaseUrl.replace(/\/+$/, '') + '/'; }
-  } catch {}
+  try { const s = localStorage.getItem('sys_config_v1'); if (s) { const c = JSON.parse(s); if (c.firebaseUrl) return c.firebaseUrl.replace(/\/+$/, '') + '/'; } } catch {}
   return 'https://ice-work-d8045-default-rtdb.asia-southeast1.firebasedatabase.app/';
 })();
 let lastFirebaseHash = '';
+let myLastRawHash = ''; // 내가 보낸 rawData 해시
+let isSendingToFb = false;
 
 function makeDataHash(live) {
-  // timestamp 제외하고 해시 생성 (매번 달라지니까)
   const { timestamp, ...rest } = live;
   return JSON.stringify(rest);
 }
+
+// ── 15초마다 Firebase에서 최신 데이터 받아오기 (다른 기기 입력 반영) ──
+async function pullFromFirebase() {
+  if (!FB_URL || isSendingToFb) return;
+  try {
+    const res = await fetch(`${FB_URL}live.json?t=${Date.now()}`);
+    if (!res.ok) return;
+    const live = await res.json();
+    if (!live || !live.rawData) return;
+    const hash = JSON.stringify(live.rawData);
+    if (hash === myLastRawHash) return; // 내가 보낸 것과 같으면 무시
+    if (hash === lastPulledHash) return; // 이미 적용한 것
+    lastPulledHash = hash;
+    applyData(live.rawData);
+    saveCur();
+    showToast('🔄 다른 기기 입력 반영됨');
+  } catch(e) {}
+}
+let lastPulledHash = '';
+setInterval(pullFromFirebase, 15000);
 
 function syncToFirebase(entry, forceSync) {
   try {
@@ -1403,17 +1542,15 @@ function syncToFirebase(entry, forceSync) {
     const dateKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
     const live = buildLiveData(entry);
     const hash = makeDataHash(live);
-
     if (!forceSync && hash === lastFirebaseHash) return;
     lastFirebaseHash = hash;
-    lastLiveHash = JSON.stringify(entry.data); // 내가 보낸 것 기록 (수신 무시용)
-
-    isSyncing = true;
-    // rawData 포함해서 저장 (다른 기기가 그대로 복원할 수 있도록)
+    myLastRawHash = JSON.stringify(entry.data);
+    lastPulledHash = myLastRawHash;
+    isSendingToFb = true;
     const payload = {...live, rawData: entry.data};
     fetch(`${FB_URL}live.json`, {method:'PUT', body:JSON.stringify(payload)}).catch(()=>{});
     fetch(`${FB_URL}history/${dateKey}.json`, {method:'PUT', body:JSON.stringify(payload)}).catch(()=>{});
-    setTimeout(() => { isSyncing = false; }, 3000);
+    setTimeout(() => { isSendingToFb = false; }, 5000);
   } catch(e){}
 }
 
@@ -1496,33 +1633,6 @@ function renderSlots(){
 
 // ══ 자동저장 (30초 로컬저장 유지, Firebase는 변동시만) ══
 let countdown=30,lastData='';
-
-// ══ Firebase 실시간 공유 - 다른 기기 입력 반영 ══
-let lastLiveHash = '';
-let isSyncing = false; // 내가 전송 중일 때 수신 무시
-
-async function pullFromFirebase() {
-  if (!FB_URL || isSyncing) return;
-  try {
-    const res = await fetch(`${FB_URL}live.json?t=${Date.now()}`);
-    if (!res.ok) return;
-    const live = await res.json();
-    if (!live || !live.rawData) return;
-
-    // 내가 마지막으로 올린 것과 같으면 무시
-    const hash = JSON.stringify(live.rawData);
-    if (hash === lastLiveHash) return;
-    lastLiveHash = hash;
-
-    // 화면에 반영
-    applyData(live.rawData);
-    saveCur();
-    showToast('🔄 다른 기기 입력 반영됨');
-  } catch(e) {}
-}
-
-// 15초마다 Firebase에서 최신 데이터 받아오기
-setInterval(pullFromFirebase, 15000);
 setInterval(()=>{
   countdown--;
   document.getElementById('auto-badge').textContent=`● ${countdown}s`;
@@ -1947,7 +2057,7 @@ let ttsInterval = null;
 async function pollJbMessage() {
   if (!FB_URL) return;
   try {
-    const res = await fetch(`${FB_URL}message.json?t=${Date.now()}`);
+    const res = await fetch(`${FB_URL}/message.json?t=${Date.now()}`);
     if (!res.ok) return;
     const msg = await res.json();
     if (!msg || !msg.text) return;
@@ -2014,13 +2124,13 @@ async function confirmJbMsg() {
   // Firebase에 확인 완료 기록
   if (FB_URL) {
     try {
-      const res = await fetch(`${FB_URL}message.json?t=${Date.now()}`);
+      const res = await fetch(`${FB_URL}/message.json?t=${Date.now()}`);
       if (res.ok) {
         const msg = await res.json();
         if (msg) {
           msg.confirmed = true;
           msg.confirmedAt = Date.now();
-          await fetch(`${FB_URL}message.json`, {method:'PUT', body:JSON.stringify(msg)}).catch(()=>{});
+          await fetch(`${FB_URL}/message.json`, {method:'PUT', body:JSON.stringify(msg)}).catch(()=>{});
         }
       }
     } catch(e) {}
@@ -2045,49 +2155,42 @@ const today = new Date();
 const dateStr = `${today.getMonth()+1}월 ${today.getDate()}일 (${DAYS_KO[today.getDay()]})`;
 document.getElementById('app-date-display').textContent = dateStr;
 
-
-// ══════════════════════════════════════════
-// 출근부 시스템
-// ══════════════════════════════════════════
-const ATT_KEY = 'att_data_v1';
-const ATT_MEMBERS = ['이지철','이성재','한태준','최태원','김제선','김성영','오영석'];
-
 // ── 설정관리 연동: 작업자·직배·팀명·시작시간 로드 ──
 (function applySysConfig() {
   try {
     const s = localStorage.getItem('sys_config_v1');
     if (!s) return;
     const cfg = JSON.parse(s);
-    // 작업자 드롭다운
     if (cfg.workers && cfg.workers.length) {
       const sel = document.getElementById('worker-select');
       if (sel) {
         sel.innerHTML = '<option value="">작업자 선택</option>' +
           cfg.workers.map(w => `<option>${w}</option>`).join('');
       }
-      // 출근부 멤버 교체
       ATT_MEMBERS.length = 0;
       cfg.workers.forEach(w => ATT_MEMBERS.push(w));
     }
-    // 직배 목록 교체
     if (cfg.jbList && cfg.jbList.length) {
       JB_NAMES.length = 0;
       cfg.jbList.forEach(n => JB_NAMES.push(n));
     }
-    // 팀 배지
     if (cfg.company) {
       const badge = document.getElementById('att-team-badge');
       if (badge) badge.textContent = '🧊 ' + cfg.company;
     }
-    // 시작 시간 (생산성 계산용)
     if (cfg.startTime) window.SYS_START_TIME = cfg.startTime;
-    // 광교/개별운송 이름
-    if (cfg.extraGwangyo) {
-      const el = document.querySelector('.gwangyo-name');
-      if (el) el.textContent = '⭐ ' + cfg.extraGwangyo;
-    }
   } catch(e) {}
-})()
+})();
+
+// ── 로그인 체크 ──
+checkLogin();
+
+
+// ══════════════════════════════════════════
+// 출근부 시스템
+// ══════════════════════════════════════════
+const ATT_KEY = 'att_data_v1';
+const ATT_MEMBERS = ['이지철','이성재','한태준','최태원','김제선','김성영','오영석'];
 let attTempData = null; // 임시 저장 (버튼 누를 때만 localStorage에 씀)
 // 버튼: 출근/퇴근/지원/휴무 (지각→퇴근, 결근→지원, 휴가삭제)
 const ATT_STATUS = [
@@ -2296,15 +2399,14 @@ function attSyncToFirebase() {
       supportCount: ATT_MEMBERS.filter(n => todayAtt[n]?.status === 'absent').length, // 조출 인원
       offCount: ATT_MEMBERS.filter(n => todayAtt[n]?.status === 'off').length,
     };
-    fetch(`${FB_URL}attendance.json`, {method:'PUT', body:JSON.stringify(attPayload)}).catch(()=>{});
+    fetch(`${FB_URL}/attendance.json`, {method:'PUT', body:JSON.stringify(attPayload)}).catch(()=>{});
   } catch(e){}
 }
 
 // ── 시간당 생산량 계산 (9시 기준) ──
 function calcHourlyProductivity() {
   const now = new Date();
-  const startStr = window.SYS_START_TIME || '09:00';
-  const [startH, startM] = startStr.split(':').map(Number);
+  const startH = 9, startM = 0;
   const elapsedMins = (now.getHours() * 60 + now.getMinutes()) - (startH * 60 + startM);
   if (elapsedMins <= 0) return null;
   const elapsedHours = elapsedMins / 60;
