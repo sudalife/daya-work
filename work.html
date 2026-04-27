@@ -47,8 +47,8 @@ body{font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif;background:var(
 
 /* ── 페이지 슬라이더 ── */
 .pages-outer{overflow:hidden;}
-.pages-slider{display:flex;width:500%;transition:transform .32s cubic-bezier(.4,0,.2,1);}
-.page{width:20%;min-height:100vh;}
+.pages-slider{display:flex;width:400%;transition:transform .32s cubic-bezier(.4,0,.2,1);}
+.page{width:25%;min-height:100vh;}
 .page-inner{padding-bottom:60px;}
 
 /* ── 요약 카드 ── */
@@ -403,25 +403,6 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
 .att-day-modal-box{background:var(--card);border-radius:18px 18px 0 0;width:100%;max-width:480px;padding:18px 14px;max-height:80vh;overflow-y:auto;}
 .att-day-modal-title{font-size:14px;font-weight:900;color:var(--text);margin-bottom:12px;text-align:center;}
 
-
-/* ══ 주문량 탭 CSS ══ */
-.order-company-card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden;}
-.order-company-header{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;cursor:pointer;background:var(--card2);}
-.order-company-name{font-size:13px;font-weight:800;color:var(--text);}
-.order-company-total{font-size:18px;font-weight:900;color:var(--a1);}
-.order-rounds-panel{padding:10px 12px;border-top:1px solid var(--border);}
-.order-round-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-.order-round-label{font-size:11px;color:var(--muted);font-weight:700;width:50px;flex-shrink:0;}
-.order-round-input{flex:1;background:var(--ibg);border:2px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;font-weight:700;padding:6px 9px;text-align:right;outline:none;font-family:inherit;-moz-appearance:textfield;}
-.order-round-input:focus{border-color:var(--a1);}
-.order-round-input::-webkit-inner-spin-button,.order-round-input::-webkit-outer-spin-button{-webkit-appearance:none;}
-.order-round-add-btn{background:rgba(59,158,255,.15);border:1.5px solid rgba(59,158,255,.4);color:var(--a1);border-radius:8px;padding:5px 11px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;}
-.order-round-del-btn{background:rgba(239,68,68,.1);border:1.5px solid rgba(239,68,68,.3);color:#ef4444;border-radius:8px;padding:5px 9px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;}
-.order-summary-bar{background:var(--card2);border-radius:10px;padding:10px 13px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
-.order-summary-total{font-size:22px;font-weight:900;color:var(--a1);}
-.order-save-btn{background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;width:100%;margin-bottom:8px;}
-.order-save-status{font-size:11px;color:var(--muted);text-align:center;min-height:16px;}
-
 </style>
 </head>
 <body>
@@ -508,10 +489,6 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
   <button class="tab-btn" onclick="switchTab(3)" id="tab3">
     <div class="tab-icon">📋</div>
     <div class="tab-label">출근부</div>
-  </button>
-  <button class="tab-btn" onclick="switchTab(4)" id="tab4">
-    <div class="tab-icon">📦</div>
-    <div class="tab-label">주문량</div>
   </button>
 </nav>
 
@@ -770,26 +747,6 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
 
 </div></div><!-- /page3 출근부 -->
 
-
-<!-- ══ 페이지 4: 주문량 ══ -->
-<div class="page" id="page4">
-<div class="page-inner">
-  <div style="padding:0 0 4px;">
-    <div class="order-summary-bar">
-      <div>
-        <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px;">📦 전체 주문 합계</div>
-        <div class="order-summary-total" id="order-grand-total">0</div>
-      </div>
-      <div style="text-align:right;">
-        <button class="order-save-btn" style="width:auto;padding:9px 18px;margin-bottom:0;" onclick="orderSave()">💾 저장</button>
-      </div>
-    </div>
-    <div class="order-save-status" id="order-save-status"></div>
-  </div>
-  <div id="order-company-list"></div>
-</div>
-</div><!-- /page4 주문량 -->
-
 </div></div><!-- /slider, outer -->
 
 <!-- ══ 보고서 모달 ══ -->
@@ -816,13 +773,12 @@ let curTab = 0;
 function switchTab(i) {
   const prevTab = curTab;
   curTab = i;
-  const pct = [0, -20, -40, -60, -80][i] ?? 0;
+  const pct = [0, -25, -50, -75][i] || 0;
   document.getElementById('pagesSlider').style.transform = `translateX(${pct}%)`;
   document.querySelectorAll('.tab-btn').forEach((b,j) => b.classList.toggle('active', j===i));
   window.scrollTo({top:0,behavior:'instant'});
   if (i === 1) showNoticeIfNeeded();
   if (i === 3) { setTimeout(() => attRenderDay(), 50); }
-  if (i === 4) { setTimeout(() => orderRenderPage(), 50); }
   // 요약탭(0)에서 다른 탭으로 이동할 때 첫 빈 입력칸으로 포커스
   if (prevTab === 0 && i !== 0) {
     setTimeout(() => {
@@ -1448,12 +1404,16 @@ function syncToFirebase(entry, forceSync) {
     const live = buildLiveData(entry);
     const hash = makeDataHash(live);
 
-    // 변동 없으면 Firebase 전송 안 함 (forceSync=true면 강제 전송)
     if (!forceSync && hash === lastFirebaseHash) return;
     lastFirebaseHash = hash;
+    lastLiveHash = JSON.stringify(entry.data); // 내가 보낸 것 기록 (수신 무시용)
 
-    fetch(`${FB_URL}/live.json`, {method:'PUT', body:JSON.stringify(live)}).catch(()=>{});
-    fetch(`${FB_URL}/history/${dateKey}.json`, {method:'PUT', body:JSON.stringify(live)}).catch(()=>{});
+    isSyncing = true;
+    // rawData 포함해서 저장 (다른 기기가 그대로 복원할 수 있도록)
+    const payload = {...live, rawData: entry.data};
+    fetch(`${FB_URL}live.json`, {method:'PUT', body:JSON.stringify(payload)}).catch(()=>{});
+    fetch(`${FB_URL}history/${dateKey}.json`, {method:'PUT', body:JSON.stringify(payload)}).catch(()=>{});
+    setTimeout(() => { isSyncing = false; }, 3000);
   } catch(e){}
 }
 
@@ -1536,6 +1496,33 @@ function renderSlots(){
 
 // ══ 자동저장 (30초 로컬저장 유지, Firebase는 변동시만) ══
 let countdown=30,lastData='';
+
+// ══ Firebase 실시간 공유 - 다른 기기 입력 반영 ══
+let lastLiveHash = '';
+let isSyncing = false; // 내가 전송 중일 때 수신 무시
+
+async function pullFromFirebase() {
+  if (!FB_URL || isSyncing) return;
+  try {
+    const res = await fetch(`${FB_URL}live.json?t=${Date.now()}`);
+    if (!res.ok) return;
+    const live = await res.json();
+    if (!live || !live.rawData) return;
+
+    // 내가 마지막으로 올린 것과 같으면 무시
+    const hash = JSON.stringify(live.rawData);
+    if (hash === lastLiveHash) return;
+    lastLiveHash = hash;
+
+    // 화면에 반영
+    applyData(live.rawData);
+    saveCur();
+    showToast('🔄 다른 기기 입력 반영됨');
+  } catch(e) {}
+}
+
+// 15초마다 Firebase에서 최신 데이터 받아오기
+setInterval(pullFromFirebase, 15000);
 setInterval(()=>{
   countdown--;
   document.getElementById('auto-badge').textContent=`● ${countdown}s`;
@@ -1960,7 +1947,7 @@ let ttsInterval = null;
 async function pollJbMessage() {
   if (!FB_URL) return;
   try {
-    const res = await fetch(`${FB_URL}/message.json?t=${Date.now()}`);
+    const res = await fetch(`${FB_URL}message.json?t=${Date.now()}`);
     if (!res.ok) return;
     const msg = await res.json();
     if (!msg || !msg.text) return;
@@ -2027,13 +2014,13 @@ async function confirmJbMsg() {
   // Firebase에 확인 완료 기록
   if (FB_URL) {
     try {
-      const res = await fetch(`${FB_URL}/message.json?t=${Date.now()}`);
+      const res = await fetch(`${FB_URL}message.json?t=${Date.now()}`);
       if (res.ok) {
         const msg = await res.json();
         if (msg) {
           msg.confirmed = true;
           msg.confirmedAt = Date.now();
-          await fetch(`${FB_URL}/message.json`, {method:'PUT', body:JSON.stringify(msg)}).catch(()=>{});
+          await fetch(`${FB_URL}message.json`, {method:'PUT', body:JSON.stringify(msg)}).catch(()=>{});
         }
       }
     } catch(e) {}
@@ -2309,7 +2296,7 @@ function attSyncToFirebase() {
       supportCount: ATT_MEMBERS.filter(n => todayAtt[n]?.status === 'absent').length, // 조출 인원
       offCount: ATT_MEMBERS.filter(n => todayAtt[n]?.status === 'off').length,
     };
-    fetch(`${FB_URL}/attendance.json`, {method:'PUT', body:JSON.stringify(attPayload)}).catch(()=>{});
+    fetch(`${FB_URL}attendance.json`, {method:'PUT', body:JSON.stringify(attPayload)}).catch(()=>{});
   } catch(e){}
 }
 
@@ -2480,187 +2467,6 @@ function attRenderStats() {
     </div>`;
   }).join('');
   statsGrid.innerHTML=memberStats;
-}
-
-
-// ══════════════════════════════════════════
-// 주문량 시스템
-// ══════════════════════════════════════════
-const ORDER_KEY = 'order_data_v1';
-
-// 회사 목록: 종근당 4회, 나머지 2회 기본
-const ORDER_COMPANIES = [
-  { id: 'jkg', name: '💊 종근당', defaultRounds: 4, color: '#ff6b9d' },
-  { id: 'gj',  name: '🟠 국제',   defaultRounds: 2, color: '#f97316' },
-  { id: 'scd', name: '🔵 삼천당', defaultRounds: 2, color: '#3b9eff' },
-  { id: 'bc',  name: '🟢 비씨',   defaultRounds: 2, color: '#2ecc71' },
-  { id: 'dw',  name: '🟡 대우',   defaultRounds: 2, color: '#ffd600' },
-  { id: 'dg',  name: '🟣 동구',   defaultRounds: 2, color: '#a78bfa' },
-  { id: 'hj',  name: '🔴 한진',   defaultRounds: 2, color: '#ef4444' },
-  { id: 'aj',  name: '⬜ 아주',   defaultRounds: 2, color: '#94a3b8' },
-  { id: 'mn',  name: '🔷 맥널티', defaultRounds: 2, color: '#3b82f6' },
-];
-
-let orderData = {}; // { companyId: { rounds: [qty1, qty2, ...] } }
-let orderUnsaved = false;
-
-function orderLoad() {
-  try {
-    const saved = localStorage.getItem(ORDER_KEY);
-    return saved ? JSON.parse(saved) : {};
-  } catch { return {}; }
-}
-
-function orderSave() {
-  localStorage.setItem(ORDER_KEY, JSON.stringify(orderData));
-  orderUnsaved = false;
-  const el = document.getElementById('order-save-status');
-  const now = new Date();
-  const t = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 저장됨`;
-  if (el) { el.textContent = t; el.style.color = '#34d399'; }
-  showToast('💾 주문량 저장 완료');
-  orderSyncToFirebase();
-}
-
-function orderMarkUnsaved() {
-  orderUnsaved = true;
-  const el = document.getElementById('order-save-status');
-  if (el) { el.textContent = '● 미저장'; el.style.color = '#f97316'; }
-}
-
-function orderRenderPage() {
-  orderData = orderLoad();
-  const container = document.getElementById('order-company-list');
-  if (!container) return;
-
-  container.innerHTML = ORDER_COMPANIES.map(co => {
-    if (!orderData[co.id]) {
-      orderData[co.id] = { rounds: Array(co.defaultRounds).fill(0) };
-    }
-    const rounds = orderData[co.id].rounds;
-    const total = rounds.reduce((a, b) => a + (b || 0), 0);
-
-    const roundRows = rounds.map((qty, idx) =>
-      `<div class="order-round-row" id="order-row-${co.id}-${idx}">
-        <div class="order-round-label">${idx + 1}회차</div>
-        <input class="order-round-input" type="number" min="0"
-          value="${qty || ''}" placeholder="0"
-          oninput="orderUpdate('${co.id}', ${idx}, this.value)">
-        <button class="order-round-del-btn" onclick="orderDelRound('${co.id}', ${idx})" title="삭제">✕</button>
-      </div>`
-    ).join('');
-
-    return `<div class="order-company-card" id="order-card-${co.id}">
-      <div class="order-company-header" onclick="orderToggle('${co.id}')">
-        <div class="order-company-name" style="color:${co.color}">${co.name}</div>
-        <div class="order-company-total" style="color:${co.color}">${total}</div>
-      </div>
-      <div class="order-rounds-panel" id="order-panel-${co.id}">
-        <div id="order-rounds-${co.id}">${roundRows}</div>
-        <button class="order-round-add-btn" onclick="orderAddRound('${co.id}')">+ 회차 추가</button>
-      </div>
-    </div>`;
-  }).join('');
-
-  orderUpdateGrandTotal();
-}
-
-function orderToggle(companyId) {
-  const panel = document.getElementById(`order-panel-${companyId}`);
-  if (!panel) return;
-  panel.style.display = panel.style.display === 'none' ? '' : 'none';
-}
-
-function orderUpdate(companyId, roundIdx, val) {
-  if (!orderData[companyId]) return;
-  orderData[companyId].rounds[roundIdx] = parseInt(val) || 0;
-  // 합계 업데이트 (카드 헤더)
-  const total = orderData[companyId].rounds.reduce((a, b) => a + (b || 0), 0);
-  const co = ORDER_COMPANIES.find(c => c.id === companyId);
-  const totalEl = document.querySelector(`#order-card-${companyId} .order-company-total`);
-  if (totalEl) totalEl.textContent = total;
-  orderUpdateGrandTotal();
-  orderMarkUnsaved();
-}
-
-function orderAddRound(companyId) {
-  if (!orderData[companyId]) return;
-  orderData[companyId].rounds.push(0);
-  const idx = orderData[companyId].rounds.length - 1;
-  const co = ORDER_COMPANIES.find(c => c.id === companyId);
-  const container = document.getElementById(`order-rounds-${companyId}`);
-  if (!container) return;
-  const row = document.createElement('div');
-  row.className = 'order-round-row';
-  row.id = `order-row-${companyId}-${idx}`;
-  row.innerHTML = `<div class="order-round-label">${idx + 1}회차</div>
-    <input class="order-round-input" type="number" min="0" value="" placeholder="0"
-      oninput="orderUpdate('${companyId}', ${idx}, this.value)">
-    <button class="order-round-del-btn" onclick="orderDelRound('${companyId}', ${idx})" title="삭제">✕</button>`;
-  container.appendChild(row);
-  row.querySelector('input')?.focus();
-  orderMarkUnsaved();
-}
-
-function orderDelRound(companyId, roundIdx) {
-  if (!orderData[companyId] || orderData[companyId].rounds.length <= 1) return;
-  orderData[companyId].rounds.splice(roundIdx, 1);
-  // 해당 회사 카드 다시 그리기
-  const co = ORDER_COMPANIES.find(c => c.id === companyId);
-  const rounds = orderData[companyId].rounds;
-  const container = document.getElementById(`order-rounds-${companyId}`);
-  if (!container) return;
-  container.innerHTML = rounds.map((qty, idx) =>
-    `<div class="order-round-row" id="order-row-${companyId}-${idx}">
-      <div class="order-round-label">${idx + 1}회차</div>
-      <input class="order-round-input" type="number" min="0"
-        value="${qty || ''}" placeholder="0"
-        oninput="orderUpdate('${companyId}', ${idx}, this.value)">
-      <button class="order-round-del-btn" onclick="orderDelRound('${companyId}', ${idx})" title="삭제">✕</button>
-    </div>`
-  ).join('');
-  // 합계 업데이트
-  const total = rounds.reduce((a, b) => a + (b || 0), 0);
-  const totalEl = document.querySelector(`#order-card-${companyId} .order-company-total`);
-  if (totalEl) totalEl.textContent = total;
-  orderUpdateGrandTotal();
-  orderMarkUnsaved();
-}
-
-function orderUpdateGrandTotal() {
-  let grand = 0;
-  ORDER_COMPANIES.forEach(co => {
-    if (orderData[co.id]) {
-      grand += orderData[co.id].rounds.reduce((a, b) => a + (b || 0), 0);
-    }
-  });
-  const el = document.getElementById('order-grand-total');
-  if (el) el.textContent = grand.toLocaleString();
-}
-
-// Firebase 주문량 동기화
-let lastOrderHash = '';
-function orderSyncToFirebase() {
-  if (!FB_URL) return;
-  try {
-    const hash = JSON.stringify(orderData);
-    if (hash === lastOrderHash) return;
-    lastOrderHash = hash;
-    const today = new Date();
-    const dateKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-    const payload = {
-      date: dateKey,
-      companies: ORDER_COMPANIES.map(co => ({
-        id: co.id,
-        name: co.name,
-        rounds: (orderData[co.id]?.rounds || []),
-        total: (orderData[co.id]?.rounds || []).reduce((a, b) => a + (b || 0), 0),
-      })),
-      grandTotal: ORDER_COMPANIES.reduce((sum, co) =>
-        sum + (orderData[co.id]?.rounds || []).reduce((a, b) => a + (b || 0), 0), 0),
-    };
-    fetch(`${FB_URL}/order.json`, {method:'PUT', body:JSON.stringify(payload)}).catch(()=>{});
-  } catch(e) {}
 }
 
 // ══ 화면 꺼짐 방지 (Wake Lock) ══
