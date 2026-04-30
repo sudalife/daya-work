@@ -173,6 +173,7 @@
     <button class="menu-item" id="menuAttend" onclick="switchMenu('Attend')"><span class="menu-icon">⏰</span>근태 조회</button>
     <button class="menu-item" id="menuPayroll" onclick="switchMenu('Payroll')"><span class="menu-icon">💰</span>급여 관리</button>
     <button class="menu-item" id="menuLeave" onclick="switchMenu('Leave')"><span class="menu-icon">📅</span>연차 현황</button>
+    <button class="menu-item" id="menuReset" onclick="switchMenu('Reset')"><span class="menu-icon">🗑️</span>데이터 초기화</button>
     <button class="menu-item" id="menuFix" onclick="switchMenu('Fix')"><span class="menu-icon">✏️</span>수정 요청 <span id="fixBadge" style="background:var(--danger);color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;display:none">0</span></button>
   </nav>
   <div class="sidebar-bottom">
@@ -288,6 +289,7 @@
     <button class="mobile-tab" id="mTabAttend" onclick="switchMenu('Attend')"><span class="mobile-tab-icon">⏰</span>근태</button>
     <button class="mobile-tab" id="mTabPayroll" onclick="switchMenu('Payroll')"><span class="mobile-tab-icon">💰</span>급여</button>
     <button class="mobile-tab" id="mTabLeave" onclick="switchMenu('Leave')"><span class="mobile-tab-icon">📅</span>연차</button>
+    <button class="mobile-tab" id="mTabReset" onclick="switchMenu('Reset')"><span class="mobile-tab-icon">🗑️</span>초기화</button>
     <button class="mobile-tab" id="mTabFix" onclick="switchMenu('Fix')"><span class="mobile-tab-icon">✏️</span>수정요청</button>
     <!-- 수정 요청 -->
     <div class="screen" id="screenFix">
@@ -300,6 +302,79 @@
       </div>
     </div>
 
+    <!-- 데이터 초기화 -->
+    <div class="screen" id="screenReset">
+      <div class="section-title">🗑️ 데이터 초기화</div>
+      <div style="background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.2);border-radius:10px;padding:14px;font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:20px;">
+        ⚠️ <strong style="color:var(--danger)">초기화된 데이터는 복구 불가능합니다.</strong><br>
+        반드시 필요한 경우에만 사용하세요.
+      </div>
+
+      <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:20px;margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:14px;">📅 기간별 출퇴근 초기화</div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+          <input type="date" id="resetDateFrom" class="filter-input" placeholder="시작일">
+          <span style="line-height:36px;color:var(--text2)">~</span>
+          <input type="date" id="resetDateTo" class="filter-input" placeholder="종료일">
+        </div>
+        <button onclick="resetByDate()" style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;width:100%;">해당 기간 출퇴근 기록 삭제</button>
+      </div>
+
+      <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:20px;margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:14px;">👥 팀별 출퇴근 초기화</div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+          <select id="resetTeam" class="filter-select">
+            <option value="">팀 선택</option>
+            <option>냉장</option><option>1층</option><option>3층</option><option>4층</option><option>5층</option>
+          </select>
+          <input type="month" id="resetTeamMonth" class="filter-input">
+        </div>
+        <button onclick="resetByTeam()" style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;width:100%;">해당 팀 출퇴근 기록 삭제</button>
+      </div>
+
+      <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:20px;margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:14px;">📋 연차 기록 초기화</div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+          <select id="resetLeaveEmp" class="filter-select" style="flex:1;"><option value="">전체 직원</option></select>
+        </div>
+        <button onclick="resetLeaves()" style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;width:100%;">연차 신청 기록 삭제 + 잔여연차 초기화</button>
+      </div>
+
+      <div style="background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:20px;">
+        <div style="font-size:14px;font-weight:700;color:var(--danger);margin-bottom:14px;">💀 전체 초기화</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">출퇴근 + 연차 + 급여 기록 전부 삭제 (직원 정보는 유지)</div>
+        <button onclick="resetAll()" style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;width:100%;">⚠️ 전체 데이터 초기화</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 가입 승인 모달 -->
+<div class="modal-overlay" id="approveModal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-title">✅ 가입 승인</div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:16px;" id="approveModalName"></div>
+    <div class="modal-row">
+      <label class="modal-label">시급 (원)</label>
+      <input class="modal-input" id="approveWage" type="number" value="11000" placeholder="11000">
+    </div>
+    <div class="modal-row">
+      <label class="modal-label">총 연차 (일)</label>
+      <input class="modal-input" id="approveAnnual" type="number" value="15" placeholder="15">
+    </div>
+    <div class="modal-row">
+      <label class="modal-label">직급</label>
+      <select class="modal-select" id="approveRole">
+        <option value="worker">작업자</option>
+        <option value="sub_leader">부팀장</option>
+        <option value="leader">팀장</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeApproveModal()">취소</button>
+      <button class="btn-submit" onclick="confirmApprove()">승인 완료</button>
+    </div>
   </div>
 </div>
 
@@ -538,22 +613,38 @@ async function renderSignupTable() {
   </tr>`).join('');
 }
 
-window.approveSignup = async function(uid,pendingId,name) {
-  const wage=prompt(name+'님 시급을 입력하세요 (원)','11000');
-  if(wage===null)return;
-  const annual=prompt('총 연차 일수를 입력하세요','15');
-  if(annual===null)return;
+let _approveData = {};
+
+window.approveSignup = function(uid, pendingId, name) {
+  _approveData = {uid, pendingId, name};
+  document.getElementById('approveModalName').textContent = name + '님 정보를 입력하세요';
+  document.getElementById('approveWage').value = '11000';
+  document.getElementById('approveAnnual').value = '15';
+  document.getElementById('approveRole').value = 'worker';
+  document.getElementById('approveModal').classList.add('open');
+}
+
+window.closeApproveModal = function() {
+  document.getElementById('approveModal').classList.remove('open');
+}
+
+window.confirmApprove = async function() {
+  const {uid, pendingId, name} = _approveData;
+  const wage = parseInt(document.getElementById('approveWage').value)||11000;
+  const annual = parseInt(document.getElementById('approveAnnual').value)||15;
+  const role = document.getElementById('approveRole').value;
+  closeApproveModal();
   showLoading('승인 처리 중...');
   try {
-    const batch=writeBatch(db);
-    batch.update(doc(db,'users',uid),{status:'active',hourly_wage:parseInt(wage)||11000,annual_total:parseInt(annual)||15});
+    const batch = writeBatch(db);
+    batch.update(doc(db,'users',uid),{status:'active', hourly_wage:wage, annual_total:annual, role});
     batch.delete(doc(db,'pending_signups',pendingId));
     await batch.commit();
     await loadAllUsers();
     populateEmpFilters();
     hideLoading();
     renderDashboard();
-    if(document.getElementById('screenSignup').classList.contains('active'))renderSignupTable();
+    if(document.getElementById('screenSignup').classList.contains('active')) renderSignupTable();
     showToast(name+' 승인 완료 ✓','success');
   } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
 }
@@ -808,9 +899,9 @@ window.renderLeaveTable = async function() {
 }
 
 // ── 메뉴 전환 ──
-const menuTitles={Dash:'대시보드',Signup:'가입 승인',Employee:'직원 관리',Attend:'근태 조회',Payroll:'급여 관리',Leave:'연차 현황',Fix:'출근 수정 요청'};
+const menuTitles={Dash:'대시보드',Signup:'가입 승인',Employee:'직원 관리',Attend:'근태 조회',Payroll:'급여 관리',Leave:'연차 현황',Fix:'출근 수정 요청',Reset:'데이터 초기화'};
 window.switchMenu = function(name) {
-  ['Dash','Signup','Employee','Attend','Payroll','Leave','Fix'].forEach(n=>{
+  ['Dash','Signup','Employee','Attend','Payroll','Leave','Fix','Reset'].forEach(n=>{
     document.getElementById('screen'+n).classList.remove('active');
     document.getElementById('menu'+n).classList.remove('active');
   });
@@ -822,8 +913,9 @@ window.switchMenu = function(name) {
   if(name==='Attend')renderAttendTable();
   if(name==='Leave')renderLeaveTable();
   if(name==='Fix')renderFixTable();
+  if(name==='Reset')initResetScreen();
   // 모바일 탭 동기화
-  ['Dash','Signup','Employee','Attend','Payroll','Leave','Fix'].forEach(n=>{
+  ['Dash','Signup','Employee','Attend','Payroll','Leave','Fix','Reset'].forEach(n=>{
     const mt=document.getElementById('mTab'+n);
     if(mt)mt.classList.toggle('active',n===name);
   });
@@ -897,6 +989,95 @@ window.rejectFixRequest = async function(fixId) {
     hideLoading();
     renderFixTable();
     showToast('수정 요청 거부됨','warn');
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+// ── 초기화 기능 ──
+function initResetScreen() {
+  // 연차 직원 필터 채우기
+  const sel = document.getElementById('resetLeaveEmp');
+  sel.innerHTML = '<option value="">전체 직원</option>';
+  Object.entries(allUsers).filter(([,u])=>u.status==='active').forEach(([uid,u])=>{
+    sel.innerHTML += `<option value="${uid}">${u.name} (${u.team})</option>`;
+  });
+  // 이번달 기본값
+  const now = new Date();
+  document.getElementById('resetTeamMonth').value = now.getFullYear()+'-'+pad(now.getMonth()+1);
+}
+
+async function deleteCollection(colName, conditions=[]) {
+  let q = collection(db, colName);
+  if (conditions.length) {
+    q = query(collection(db, colName), ...conditions);
+  }
+  const snap = await getDocs(q);
+  const batch = writeBatch(db);
+  snap.forEach(d => batch.delete(d.ref));
+  await batch.commit();
+  return snap.size;
+}
+
+window.resetByDate = async function() {
+  const from = document.getElementById('resetDateFrom').value;
+  const to = document.getElementById('resetDateTo').value;
+  if (!from || !to) { showToast('기간을 선택하세요','error'); return; }
+  if (!confirm(`${from} ~ ${to} 기간의 출퇴근 기록을 삭제하시겠습니까?\n복구 불가능합니다.`)) return;
+  showLoading('삭제 중...');
+  try {
+    const cnt = await deleteCollection('attendance',[where('date','>=',from),where('date','<=',to)]);
+    hideLoading(); showToast(cnt+'건 삭제 완료','success');
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+window.resetByTeam = async function() {
+  const team = document.getElementById('resetTeam').value;
+  const month = document.getElementById('resetTeamMonth').value;
+  if (!team) { showToast('팀을 선택하세요','error'); return; }
+  if (!confirm(`${team} 팀 ${month||'전체'} 출퇴근 기록을 삭제하시겠습니까?`)) return;
+  showLoading('삭제 중...');
+  try {
+    const conditions = [where('team','==',team)];
+    if (month) { conditions.push(where('date','>=',month+'-01')); conditions.push(where('date','<=',month+'-31')); }
+    const cnt = await deleteCollection('attendance', conditions);
+    hideLoading(); showToast(cnt+'건 삭제 완료','success');
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+window.resetLeaves = async function() {
+  const uid = document.getElementById('resetLeaveEmp').value;
+  const target = uid ? (allUsers[uid]?.name||uid) : '전체 직원';
+  if (!confirm(`${target}의 연차 기록을 삭제하고 잔여연차를 초기화하시겠습니까?`)) return;
+  showLoading('초기화 중...');
+  try {
+    const conditions = uid ? [where('uid','==',uid)] : [];
+    await deleteCollection('leaves', conditions);
+    // 연차 사용일 초기화
+    const batch = writeBatch(db);
+    if (uid) {
+      batch.update(doc(db,'users',uid),{annual_used:0});
+    } else {
+      Object.keys(allUsers).forEach(id=>{ batch.update(doc(db,'users',id),{annual_used:0}); });
+    }
+    await batch.commit();
+    await loadAllUsers();
+    hideLoading(); showToast('연차 초기화 완료','success');
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+window.resetAll = async function() {
+  if (!confirm('⚠️ 출퇴근 + 연차 + 급여 기록 전부 삭제됩니다.\n정말 진행하시겠습니까?')) return;
+  if (!confirm('마지막 확인: 이 작업은 되돌릴 수 없습니다.\n계속하시겠습니까?')) return;
+  showLoading('전체 초기화 중...');
+  try {
+    await deleteCollection('attendance');
+    await deleteCollection('leaves');
+    await deleteCollection('payroll');
+    // 모든 직원 연차 사용일 초기화
+    const batch = writeBatch(db);
+    Object.keys(allUsers).forEach(id=>{ batch.update(doc(db,'users',id),{annual_used:0}); });
+    await batch.commit();
+    await loadAllUsers();
+    hideLoading(); showToast('전체 초기화 완료','success');
   } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
 }
 
