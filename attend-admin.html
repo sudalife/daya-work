@@ -173,6 +173,7 @@
     <button class="menu-item" id="menuAttend" onclick="switchMenu('Attend')"><span class="menu-icon">⏰</span>근태 조회</button>
     <button class="menu-item" id="menuPayroll" onclick="switchMenu('Payroll')"><span class="menu-icon">💰</span>급여 관리</button>
     <button class="menu-item" id="menuLeave" onclick="switchMenu('Leave')"><span class="menu-icon">📅</span>연차 현황</button>
+    <button class="menu-item" id="menuFix" onclick="switchMenu('Fix')"><span class="menu-icon">✏️</span>수정 요청 <span id="fixBadge" style="background:var(--danger);color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;display:none">0</span></button>
   </nav>
   <div class="sidebar-bottom">
     <div class="admin-badge" id="adminName">관리자</div>
@@ -287,6 +288,18 @@
     <button class="mobile-tab" id="mTabAttend" onclick="switchMenu('Attend')"><span class="mobile-tab-icon">⏰</span>근태</button>
     <button class="mobile-tab" id="mTabPayroll" onclick="switchMenu('Payroll')"><span class="mobile-tab-icon">💰</span>급여</button>
     <button class="mobile-tab" id="mTabLeave" onclick="switchMenu('Leave')"><span class="mobile-tab-icon">📅</span>연차</button>
+    <button class="mobile-tab" id="mTabFix" onclick="switchMenu('Fix')"><span class="mobile-tab-icon">✏️</span>수정요청</button>
+    <!-- 수정 요청 -->
+    <div class="screen" id="screenFix">
+      <div class="section-title">✏️ 출근 수정 요청</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>이름</th><th>팀</th><th>날짜</th><th>현재출근</th><th>요청출근</th><th>사유</th><th>상태</th><th>처리</th></tr></thead>
+          <tbody id="fixTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -429,6 +442,8 @@ async function loadPendingSignups() {
   const snap = await getDocs(query(collection(db,'pending_signups'),orderBy('created_at','desc')));
   pendingSignups = snap.docs.map(d=>({id:d.id,...d.data()}));
   updateSignupBadge();
+  // 수정요청 배지
+  try { const fs=await getDocs(query(collection(db,'fix_requests'),where('status','==','pending'))); const fb=document.getElementById('fixBadge'); if(fb){const cnt=fs.size;fb.style.display=cnt>0?'inline':'none';fb.textContent=cnt;} } catch(e){}
 }
 
 function updateSignupBadge() {
@@ -793,9 +808,9 @@ window.renderLeaveTable = async function() {
 }
 
 // ── 메뉴 전환 ──
-const menuTitles={Dash:'대시보드',Signup:'가입 승인',Employee:'직원 관리',Attend:'근태 조회',Payroll:'급여 관리',Leave:'연차 현황'};
+const menuTitles={Dash:'대시보드',Signup:'가입 승인',Employee:'직원 관리',Attend:'근태 조회',Payroll:'급여 관리',Leave:'연차 현황',Fix:'출근 수정 요청'};
 window.switchMenu = function(name) {
-  ['Dash','Signup','Employee','Attend','Payroll','Leave'].forEach(n=>{
+  ['Dash','Signup','Employee','Attend','Payroll','Leave','Fix'].forEach(n=>{
     document.getElementById('screen'+n).classList.remove('active');
     document.getElementById('menu'+n).classList.remove('active');
   });
@@ -806,11 +821,83 @@ window.switchMenu = function(name) {
   if(name==='Employee')renderEmployeeTable();
   if(name==='Attend')renderAttendTable();
   if(name==='Leave')renderLeaveTable();
+  if(name==='Fix')renderFixTable();
   // 모바일 탭 동기화
-  ['Dash','Signup','Employee','Attend','Payroll','Leave'].forEach(n=>{
+  ['Dash','Signup','Employee','Attend','Payroll','Leave','Fix'].forEach(n=>{
     const mt=document.getElementById('mTab'+n);
     if(mt)mt.classList.toggle('active',n===name);
   });
+}
+
+// ── 수정 요청 처리 ──
+async function renderFixTable() {
+  showLoading('조회 중...');
+  try {
+    const snap = await getDocs(query(collection(db,'fix_requests'),orderBy('created_at','desc')));
+    const tbody = document.getElementById('fixTableBody');
+    const rows = snap.docs;
+
+    // 배지 업데이트
+    const pendingCnt = rows.filter(d=>d.data().status==='pending').length;
+    const fb = document.getElementById('fixBadge');
+    if(fb){fb.style.display=pendingCnt>0?'inline':'none';fb.textContent=pendingCnt;}
+
+    if(!rows.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:40px">수정 요청 없음</td></tr>';hideLoading();return;}
+    const statusMap={pending:['대기중','badge-pending'],approved:['승인','badge-approved'],rejected:['반려','badge-rejected']};
+    tbody.innerHTML = rows.map(d=>{
+      const r=d.data();
+      const [st,sc]=statusMap[r.status]||['대기중','badge-pending'];
+      const action = r.status==='pending'
+        ? `<button class="btn-approve" onclick="approveFixRequest('${d.id}','${r.attendance_id||''}','${r.requested_clock_in}','${r.uid}')">승인</button><button class="btn-reject" onclick="rejectFixRequest('${d.id}')">거부</button>`
+        : '-';
+      return `<tr>
+        <td><strong>${r.name||'-'}</strong></td><td>${r.team||'-'}</td><td>${r.date||'-'}</td>
+        <td>${r.current_clock_in||'-'}</td>
+        <td style="color:var(--warn);font-weight:700">${r.requested_clock_in||'-'}</td>
+        <td>${r.reason||'-'}</td>
+        <td><span class="status-badge ${sc}">${st}</span></td>
+        <td>${action}</td>
+      </tr>`;
+    }).join('');
+    hideLoading();
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+window.approveFixRequest = async function(fixId, attendId, newClockIn, uid) {
+  if(!confirm('수정 요청을 승인하시겠습니까?\n출근 시간이 '+newClockIn+'으로 변경됩니다.')) return;
+  showLoading('처리 중...');
+  try {
+    const batch = writeBatch(db);
+    // 수정 요청 승인
+    batch.update(doc(db,'fix_requests',fixId),{status:'approved',approver:currentAdmin.uid,approved_at:serverTimestamp()});
+    // 출근 기록 수정
+    if(attendId) {
+      const [ih,im] = newClockIn.split(':').map(Number);
+      const isLate = ih>9||(ih===9&&im>0);
+      batch.update(doc(db,'attendance',attendId),{
+        clock_in: newClockIn,
+        status: isLate?'late':'normal',
+        edited_by: currentAdmin.uid,
+        edited_at: serverTimestamp(),
+        edit_reason: '수정요청 승인'
+      });
+    }
+    await batch.commit();
+    hideLoading();
+    renderFixTable();
+    showToast('수정 요청 승인됨 ✓','success');
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+window.rejectFixRequest = async function(fixId) {
+  if(!confirm('수정 요청을 거부하시겠습니까?')) return;
+  showLoading('처리 중...');
+  try {
+    await updateDoc(doc(db,'fix_requests',fixId),{status:'rejected',approver:currentAdmin.uid,approved_at:serverTimestamp()});
+    hideLoading();
+    renderFixTable();
+    showToast('수정 요청 거부됨','warn');
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
 }
 
 // ── 유틸 ──

@@ -223,6 +223,7 @@
       <div class="clock-time" id="liveTime">--:--:--</div>
       <button class="btn-clock-in" id="clockBtn" onclick="handleClockBtn()">출근하기</button>
       <div class="gps-info" id="gpsInfo">📍 GPS 위치 확인 중...</div>
+      <button id="fixRequestBtn" onclick="openFixRequest()" style="display:none;width:100%;background:none;border:1px solid var(--warn);color:var(--warn);border-radius:10px;padding:10px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:8px;">✏️ 출근 기록 수정 요청</button>
     </div>
     <div class="info-grid">
       <div class="info-card"><div class="info-card-label">잔여 연차</div><div class="info-card-value" id="remainLeave">--<span class="info-card-unit">일</span></div></div>
@@ -277,6 +278,28 @@
     <button class="tab active" id="tabHome" onclick="switchTab('Home')"><span class="tab-icon">🏠</span>홈</button>
     <button class="tab" id="tabLeave" onclick="switchTab('Leave')"><span class="tab-icon">📅</span>연차</button>
     <button class="tab" id="tabRecord" onclick="switchTab('Record')"><span class="tab-icon">📊</span>내 기록</button>
+  </div>
+</div>
+
+<!-- 수정 요청 모달 -->
+<div class="modal-overlay" id="fixModal">
+  <div class="modal">
+    <div class="modal-title">✏️ 출근 기록 수정 요청</div>
+    <div style="background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.2);border-radius:10px;padding:12px;font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
+      출근 기록이 잘못됐을 경우 관리자에게 수정을 요청합니다.
+    </div>
+    <div class="modal-row">
+      <label class="modal-label">실제 출근 시간</label>
+      <input class="modal-input" type="time" id="fixClockIn">
+    </div>
+    <div class="modal-row">
+      <label class="modal-label">수정 사유 *</label>
+      <input class="modal-input" type="text" id="fixReason" placeholder="예) GPS 오류로 자동출근 안됨">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeFixModal()">취소</button>
+      <button class="btn-submit" onclick="submitFixRequest()">요청 보내기</button>
+    </div>
   </div>
 </div>
 
@@ -491,32 +514,57 @@ function startClock() {
 }
 
 // ── GPS ──
+let autoClockInDone = false; // 자동출근 중복 방지
+
 function startGPS() {
   const el = document.getElementById('gpsInfo');
-  if (!navigator.geolocation) { el.textContent='📍 GPS 미지원 기기 - 수동 체크'; return; }
+  if (!navigator.geolocation) {
+    el.textContent = '📍 GPS 미지원 - 수동 출근 사용';
+    return;
+  }
   navigator.geolocation.watchPosition(
-    pos => { gpsPosition={lat:pos.coords.latitude,lng:pos.coords.longitude}; el.textContent='📍 위치 확인됨'; },
-    () => { el.textContent='📍 GPS 사용 불가 - 수동 체크'; },
-    {enableHighAccuracy:true,timeout:10000}
+    pos => {
+      gpsPosition = {lat:pos.coords.latitude, lng:pos.coords.longitude};
+      const dist = getDistance(gpsPosition.lat, gpsPosition.lng, companySettings.lat, companySettings.lng);
+      const inRadius = dist <= companySettings.radius;
+
+      if (inRadius) {
+        el.innerHTML = '📍 <span style="color:var(--accent2);font-weight:700">회사 도착 (' + Math.round(dist) + 'm)</span>';
+        // 미출근 상태이고 자동출근 미처리 시 자동 출근
+        if (clockState === 'none' && !autoClockInDone) {
+          autoClockInDone = true;
+          processClockIn(new Date(), 'gps_auto');
+        }
+      } else {
+        el.innerHTML = '📍 <span style="color:var(--text2)">회사 반경 외 (' + Math.round(dist) + 'm)</span>';
+      }
+    },
+    err => {
+      document.getElementById('gpsInfo').textContent = '📍 GPS 사용 불가 - 수동 출근 버튼 사용';
+    },
+    {enableHighAccuracy:true, timeout:15000, maximumAge:10000}
   );
 }
 
 function checkGPS() {
-  if (!gpsPosition) return {ok:true,msg:'GPS 없음(수동)'};
-  const dist = getDistance(gpsPosition.lat,gpsPosition.lng,companySettings.lat,companySettings.lng);
-  return dist <= companySettings.radius ? {ok:true,msg:'회사 내 ('+Math.round(dist)+'m)'} : {ok:false,msg:'회사 반경 외 ('+Math.round(dist)+'m)'};
+  if (!gpsPosition) return {ok:true, msg:'GPS 없음(수동)'};
+  const dist = getDistance(gpsPosition.lat, gpsPosition.lng, companySettings.lat, companySettings.lng);
+  return dist <= companySettings.radius
+    ? {ok:true, msg:'회사 내 ('+Math.round(dist)+'m)'}
+    : {ok:false, msg:'회사 반경 외 ('+Math.round(dist)+'m)'};
 }
 
 // ── 오늘 기록 로드 ──
 async function loadTodayRecord() {
   const today = getDateStr(new Date());
+  autoClockInDone = false; // 날짜 바뀌면 초기화
   try {
     const q = query(collection(db,'attendance'), where('uid','==',currentUser.uid), where('date','==',today));
     const snap = await getDocs(q);
     if (snap.empty) { todayRecord=null; clockState='none'; setClockUI('none'); return; }
     const d = snap.docs[0]; todayRecord={id:d.id,...d.data()};
-    if (todayRecord.clock_in && !todayRecord.clock_out) { clockState='in'; setClockUI('in'); }
-    else if (todayRecord.clock_out) { clockState='done'; setClockUI('done'); }
+    if (todayRecord.clock_in && !todayRecord.clock_out) { clockState='in'; setClockUI('in'); autoClockInDone=true; }
+    else if (todayRecord.clock_out) { clockState='done'; setClockUI('done'); autoClockInDone=true; }
   } catch(e) { showToast('기록 로드 오류', 'error'); }
 }
 
@@ -526,23 +574,33 @@ function setClockUI(state) {
   const timeEl=document.getElementById('statusTime');
   const btn=document.getElementById('clockBtn');
   dot.className='status-dot';
-  if (state==='none') { label.textContent='미출근'; timeEl.textContent=''; btn.className='btn-clock-in'; btn.textContent='출근하기'; }
-  else if (state==='in') { dot.classList.add('in'); label.textContent='근무 중'; timeEl.textContent=todayRecord.clock_in; btn.className='btn-clock-out'; btn.textContent='퇴근하기'; }
-  else { label.textContent='퇴근 완료'; timeEl.textContent=(todayRecord.clock_in||'')+'~'+(todayRecord.clock_out||''); btn.className='btn-clock-done'; btn.textContent='오늘 근무 완료 ✓'; }
+  const fixBtn = document.getElementById('fixRequestBtn');
+  if (state==='none') {
+    label.textContent='미출근'; timeEl.textContent=''; btn.className='btn-clock-in'; btn.textContent='출근하기';
+    if(fixBtn) fixBtn.style.display='none';
+  } else if (state==='in') {
+    dot.classList.add('in'); label.textContent='근무 중'; timeEl.textContent=todayRecord.clock_in;
+    btn.className='btn-clock-out'; btn.textContent='퇴근하기';
+    if(fixBtn) fixBtn.style.display='block';
+  } else {
+    label.textContent='퇴근 완료'; timeEl.textContent=(todayRecord.clock_in||'')+'~'+(todayRecord.clock_out||'');
+    btn.className='btn-clock-done'; btn.textContent='오늘 근무 완료 ✓';
+    if(fixBtn) fixBtn.style.display='none';
+  }
 }
 
 // ── 출퇴근 ──
 window.handleClockBtn = function() {
   if (clockState==='done') return;
-  const gpsCheck=checkGPS();
-  const now=new Date();
-  const timeStr=pad(now.getHours())+':'+pad(now.getMinutes());
+  const now = new Date();
+  const timeStr = pad(now.getHours())+':'+pad(now.getMinutes());
   if (clockState==='none') {
-    let msg=timeStr+'에 출근 처리하시겠습니까?';
-    if (!gpsCheck.ok) msg+='\n\n⚠️ '+gpsCheck.msg+'\n수동으로 출근 처리됩니다.';
-    showConfirm('🟢','출근 처리',msg,()=>processClockIn(now,gpsCheck.ok?'gps':'manual'));
+    const gpsCheck = checkGPS();
+    let msg = timeStr+'에 수동 출근 처리하시겠습니까?';
+    if (!gpsCheck.ok) msg += '\n\n⚠️ '+gpsCheck.msg;
+    showConfirm('🟢','수동 출근', msg, ()=>processClockIn(now,'manual'));
   } else {
-    showConfirm('🔴','퇴근 처리',timeStr+'에 퇴근 처리하시겠습니까?',()=>processClockOut(now));
+    showConfirm('🔴','퇴근 처리', timeStr+'에 퇴근 처리하시겠습니까?', ()=>processClockOut(now));
   }
 }
 
@@ -569,7 +627,8 @@ async function processClockIn(now, method) {
     todayRecord={id:ref.id,uid:currentUser.uid,date:today,clock_in:timeStr,clock_out:null,status:isLate?'late':'normal'};
     clockState='in'; setClockUI('in');
     hideLoading();
-    showToast(isLate?'출근 완료 (지각)':'출근 완료 ✓', isLate?'warn':'success');
+    const autoMsg = method==='gps_auto' ? ' (GPS 자동)' : ' (수동)';
+    showToast(isLate?'출근 완료'+autoMsg+' - 지각':'출근 완료'+autoMsg+' ✓', isLate?'warn':'success');
     calcMonthSummary();
   } catch(e) { hideLoading(); showToast('출근 처리 오류: '+e.message,'error'); }
 }
@@ -667,6 +726,43 @@ window.onLeaveStartChange = function() {
   const s=document.getElementById('leaveStart').value;
   document.getElementById('leaveEnd').min=s;
   if(document.getElementById('leaveEnd').value<s) document.getElementById('leaveEnd').value=s;
+}
+
+// ── 수정 요청 ──
+window.openFixRequest = function() {
+  const now = new Date();
+  document.getElementById('fixClockIn').value = pad(now.getHours())+':'+pad(now.getMinutes());
+  document.getElementById('fixReason').value = '';
+  document.getElementById('fixModal').classList.add('open');
+}
+
+window.closeFixModal = function() {
+  document.getElementById('fixModal').classList.remove('open');
+}
+
+window.submitFixRequest = async function() {
+  const clockIn = document.getElementById('fixClockIn').value;
+  const reason = document.getElementById('fixReason').value.trim();
+  if (!clockIn) { showToast('출근 시간을 입력하세요','error'); return; }
+  if (!reason) { showToast('수정 사유를 입력하세요','error'); return; }
+  showLoading('요청 전송 중...');
+  try {
+    await addDoc(collection(db,'fix_requests'),{
+      uid: currentUser.uid,
+      name: userData.name,
+      team: userData.team,
+      date: getDateStr(new Date()),
+      attendance_id: todayRecord?.id || null,
+      current_clock_in: todayRecord?.clock_in || null,
+      requested_clock_in: clockIn,
+      reason,
+      status: 'pending',
+      created_at: serverTimestamp()
+    });
+    closeFixModal();
+    hideLoading();
+    showToast('수정 요청이 관리자에게 전송됐습니다 ✓','success');
+  } catch(e) { hideLoading(); showToast('요청 오류: '+e.message,'error'); }
 }
 
 window.submitLeave = async function() {
