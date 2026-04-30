@@ -615,6 +615,19 @@ async function renderSignupTable() {
 
 let _approveData = {};
 
+// 직원관리 탭에서도 승인 가능
+window.openApproveFromEmployee = async function(uid, name) {
+  // pending_signups에서 해당 uid의 pendingId 찾기
+  const snap = await getDocs(query(collection(db,'pending_signups'), where('uid','==',uid)));
+  const pendingId = snap.empty ? '__direct__' : snap.docs[0].id;
+  _approveData = {uid, pendingId, name, fromEmployee: true};
+  document.getElementById('approveModalName').textContent = name + '님 정보를 입력하세요';
+  document.getElementById('approveWage').value = '11000';
+  document.getElementById('approveAnnual').value = '15';
+  document.getElementById('approveRole').value = 'worker';
+  document.getElementById('approveModal').classList.add('open');
+}
+
 window.approveSignup = function(uid, pendingId, name) {
   _approveData = {uid, pendingId, name};
   document.getElementById('approveModalName').textContent = name + '님 정보를 입력하세요';
@@ -638,7 +651,7 @@ window.confirmApprove = async function() {
   try {
     const batch = writeBatch(db);
     batch.update(doc(db,'users',uid),{status:'active', hourly_wage:wage, annual_total:annual, role});
-    batch.delete(doc(db,'pending_signups',pendingId));
+    if(pendingId && pendingId !== '__direct__') batch.delete(doc(db,'pending_signups',pendingId));
     await batch.commit();
     await loadAllUsers();
     populateEmpFilters();
@@ -679,7 +692,12 @@ window.renderEmployeeTable = function() {
     <td>${(u.hourly_wage||0).toLocaleString()}원</td><td>${u.hire_date||'-'}</td>
     <td><span style="color:var(--accent2)">${(u.annual_total||0)-(u.annual_used||0)}일</span> / ${u.annual_total||0}일</td>
     <td><span class="status-badge ${u.status==='active'?'badge-in':u.status==='pending'?'badge-pending':'badge-absent'}">${u.status==='active'?'재직':u.status==='pending'?'승인대기':'퇴직'}</span></td>
-    <td><button class="td-btn" onclick="editEmployee('${uid}')">수정</button><button class="td-btn" style="color:var(--warn)" onclick="toggleStatus('${uid}','${u.name}','${u.status}')">${u.status==='active'?'퇴직':'복직'}</button></td>
+    <td>
+      ${u.status==='pending'
+        ? `<button class="td-btn" style="color:var(--accent2);border-color:var(--accent2)" onclick="openApproveFromEmployee('${uid}','${u.name}')">승인</button>`
+        : `<button class="td-btn" onclick="editEmployee('${uid}')">수정</button><button class="td-btn" style="color:var(--warn)" onclick="toggleStatus('${uid}','${u.name}','${u.status}')">${u.status==='active'?'퇴직':'복직'}</button>`
+      }
+    </td>
   </tr>`).join('');
 }
 
@@ -1094,6 +1112,24 @@ window.showToast=function(msg,type=''){
 }
 
 document.getElementById('loginPw').addEventListener('keydown',e=>{if(e.key==='Enter')window.doLogin();});
+
+// 뒤로가기 버튼 처리 - 앱에서 나가지 않게
+const menuOrder = ['Dash','Signup','Employee','Attend','Payroll','Leave','Fix','Reset'];
+let currentMenu = 'Dash';
+const originalSwitchMenu = window.switchMenu;
+window.switchMenu = function(name) {
+  currentMenu = name;
+  originalSwitchMenu(name);
+}
+window.addEventListener('popstate', function(e) {
+  if(document.getElementById('mainApp').style.display !== 'none') {
+    if(currentMenu !== 'Dash') {
+      window.switchMenu('Dash');
+    }
+    history.pushState(null, '', location.href);
+  }
+});
+history.pushState(null, '', location.href);
 </script>
 </body>
 </html>

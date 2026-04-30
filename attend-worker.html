@@ -890,6 +890,21 @@ function getDistance(lat1,lng1,lat2,lng2){
 }
 
 document.getElementById('loginPw').addEventListener('keydown',e=>{if(e.key==='Enter')window.doLogin();});
+
+// 뒤로가기 버튼 - 앱에서 나가지 않게
+let currentTab = 'Home';
+const origSwitchTab = window.switchTab;
+window.switchTab = function(name) {
+  currentTab = name;
+  origSwitchTab(name);
+}
+window.addEventListener('popstate', function() {
+  if(document.getElementById('mainApp').style.display !== 'none') {
+    if(currentTab !== 'Home') window.switchTab('Home');
+    else history.pushState(null, '', location.href);
+  }
+});
+history.pushState(null, '', location.href);
 </script>
 </body>
 </html>
