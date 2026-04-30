@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>근태관리 - 관리자</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+  :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--accent2:#2ecc71;--danger:#e74c3c;--warn:#f39c12;--purple:#9b59b6;--text:#e8eaf6;--text2:#8892b0;--border:#2a2f45;--radius:12px;--sidebar:220px;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;}
+  .sidebar{width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+  .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);}
+  .sidebar-logo-icon{font-size:28px;}
+  .sidebar-logo-title{font-size:15px;font-weight:900;color:var(--accent);margin-top:4px;}
+  .sidebar-logo-sub{font-size:11px;color:var(--text2);}
+  .sidebar-menu{flex:1;padding:12px 0;overflow-y:auto;}
+  .menu-item{display:flex;align-items:center;gap:10px;padding:12px 20px;font-size:14px;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:none;width:100%;font-family:inherit;text-align:left;}
+  .menu-item:hover{background:var(--surface2);color:var(--text);}
+  .menu-item.active{background:rgba(79,142,247,.12);color:var(--accent);border-right:3px solid var(--accent);}
+  .menu-icon{font-size:18px;width:24px;text-align:center;}
+  .sidebar-bottom{padding:16px 20px;border-top:1px solid var(--border);}
+  .admin-badge{font-size:12px;color:var(--text2);margin-bottom:8px;}
+  .btn-logout{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px;font-size:13px;font-family:inherit;cursor:pointer;}
+  .main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+  .topbar-title{font-size:18px;font-weight:900;}
+  .topbar-date{font-size:13px;color:var(--text2);}
+  .content{padding:28px;flex:1;}
+
+  #loginScreen{position:fixed;inset:0;background:linear-gradient(160deg,#0f1117,#1a2340);display:flex;align-items:center;justify-content:center;z-index:1000;}
+  .login-box{background:var(--surface);border-radius:20px;padding:40px 36px;border:1px solid var(--border);width:360px;}
+  .login-title{font-size:20px;font-weight:900;color:var(--accent);margin-bottom:4px;}
+  .login-sub{font-size:13px;color:var(--text2);margin-bottom:32px;}
+  .form-group{margin-bottom:16px;}
+  .form-label{font-size:13px;color:var(--text2);margin-bottom:6px;display:block;}
+  .form-input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;font-size:15px;color:var(--text);font-family:inherit;outline:none;transition:border-color .2s;}
+  .form-input:focus{border-color:var(--accent);}
+  .btn-primary{width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:8px;}
+
+  .screen{display:none;}.screen.active{display:block;}
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+  .stat-card{background:var(--surface);border-radius:var(--radius);padding:20px;border:1px solid var(--border);}
+  .stat-icon{font-size:24px;margin-bottom:10px;}
+  .stat-value{font-size:32px;font-weight:900;}
+  .stat-label{font-size:12px;color:var(--text2);margin-top:4px;}
+  .dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .dash-card{background:var(--surface);border-radius:var(--radius);padding:20px;border:1px solid var(--border);}
+  .dash-card-title{font-size:14px;font-weight:700;margin-bottom:16px;color:var(--text2);}
+  .employee-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;}
+  .employee-row:last-child{border-bottom:none;}
+  .emp-name{font-weight:700;}
+  .emp-team{font-size:12px;color:var(--text2);}
+  .status-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;}
+  .badge-in{background:rgba(46,204,113,.15);color:var(--accent2);}
+  .badge-out{background:rgba(255,255,255,.06);color:var(--text2);}
+  .badge-late{background:rgba(243,156,18,.15);color:var(--warn);}
+  .badge-absent{background:rgba(231,76,60,.1);color:var(--danger);}
+  .badge-pending{background:rgba(243,156,18,.15);color:var(--warn);}
+  .badge-approved{background:rgba(46,204,113,.15);color:var(--accent2);}
+  .badge-rejected{background:rgba(231,76,60,.15);color:var(--danger);}
+  .pending-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .pending-row:last-child{border-bottom:none;}
+  .btn-approve{background:rgba(46,204,113,.15);color:var(--accent2);border:1px solid rgba(46,204,113,.3);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;margin-left:6px;}
+  .btn-reject{background:rgba(231,76,60,.1);color:var(--danger);border:1px solid rgba(231,76,60,.2);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;margin-left:4px;}
+
+  .filter-bar{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;}
+  .filter-select,.filter-input{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text);font-family:inherit;outline:none;}
+  .filter-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
+  .table-wrap{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead{background:var(--surface2);}
+  th{padding:12px 14px;text-align:left;font-size:12px;color:var(--text2);font-weight:700;white-space:nowrap;}
+  td{padding:12px 14px;border-top:1px solid var(--border);white-space:nowrap;}
+  tr:hover td{background:var(--surface2);}
+  .td-btn{background:none;border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:11px;font-family:inherit;cursor:pointer;margin-right:4px;}
+  .td-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  .pay-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+  .pay-stat{background:var(--surface);border-radius:var(--radius);padding:16px;border:1px solid var(--border);text-align:center;}
+  .pay-stat-val{font-size:22px;font-weight:900;color:var(--accent2);}
+  .pay-stat-label{font-size:12px;color:var(--text2);margin-top:4px;}
+  .pay-confirm-badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;}
+  .pay-confirmed{background:rgba(46,204,113,.15);color:var(--accent2);}
+  .pay-unconfirmed{background:rgba(243,156,18,.15);color:var(--warn);}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center;padding:24px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--surface);border-radius:16px;padding:28px;width:100%;max-width:480px;border:1px solid var(--border);max-height:90vh;overflow-y:auto;}
+  .modal-title{font-size:18px;font-weight:900;margin-bottom:24px;}
+  .modal-row{margin-bottom:14px;}
+  .modal-label{font-size:13px;color:var(--text2);margin-bottom:6px;display:block;}
+  .modal-input,.modal-select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);font-family:inherit;outline:none;}
+  .modal-input:focus,.modal-select:focus{border-color:var(--accent);}
+  .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;}
+  .btn-cancel{background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}
+  .btn-submit{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}
+
+  .loading{position:fixed;inset:0;background:rgba(15,17,23,.85);z-index:900;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+  .loading.show{display:flex;}
+  .loading-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-size:14px;font-weight:500;z-index:1000;transition:transform .3s cubic-bezier(.34,1.56,.64,1);box-shadow:0 8px 32px rgba(0,0,0,.4);}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .toast.success{border-color:var(--accent2);color:var(--accent2);}
+  .toast.error{border-color:var(--danger);color:var(--danger);}
+  .toast.warn{border-color:var(--warn);color:var(--warn);}
+  .section-title{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+  .btn-add{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
+  .info-box{background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.2);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;}
+  .info-box strong{color:var(--accent);}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading"><div class="loading-spinner"></div><div style="font-size:14px;color:var(--text2)" id="loadingText">로딩 중...</div></div>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <div style="font-size:32px;margin-bottom:12px;">📦</div>
+    <div class="login-title">관리자 로그인</div>
+    <div class="login-sub">근태관리 시스템 - 관리자 전용</div>
+    <div class="form-group"><label class="form-label">이메일</label><input class="form-input" id="loginEmail" type="email" placeholder="admin@email.com" autocomplete="off"></div>
+    <div class="form-group"><label class="form-label">비밀번호</label><input class="form-input" id="loginPw" type="password" placeholder="비밀번호 입력"></div>
+    <button class="btn-primary" onclick="doLogin()">로그인</button>
+    <div style="margin-top:16px;font-size:12px;color:var(--text2);text-align:center;">
+      처음이라면 Firebase Authentication에서<br>관리자 계정을 먼저 만들어주세요.
+    </div>
+  </div>
+</div>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">📦</div>
+    <div class="sidebar-logo-title">다야 근태관리</div>
+    <div class="sidebar-logo-sub">관리자 대시보드</div>
+  </div>
+  <nav class="sidebar-menu">
+    <button class="menu-item active" id="menuDash" onclick="switchMenu('Dash')"><span class="menu-icon">📊</span>대시보드</button>
+    <button class="menu-item" id="menuSignup" onclick="switchMenu('Signup')"><span class="menu-icon">🔔</span>가입 승인 <span id="signupBadge" style="background:var(--warn);color:#000;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;display:none">0</span></button>
+    <button class="menu-item" id="menuEmployee" onclick="switchMenu('Employee')"><span class="menu-icon">👥</span>직원 관리</button>
+    <button class="menu-item" id="menuAttend" onclick="switchMenu('Attend')"><span class="menu-icon">⏰</span>근태 조회</button>
+    <button class="menu-item" id="menuPayroll" onclick="switchMenu('Payroll')"><span class="menu-icon">💰</span>급여 관리</button>
+    <button class="menu-item" id="menuLeave" onclick="switchMenu('Leave')"><span class="menu-icon">📅</span>연차 현황</button>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="admin-badge" id="adminName">관리자</div>
+    <button class="btn-logout" onclick="doLogout()">로그아웃</button>
+  </div>
+</div>
+
+<div class="main" id="mainApp" style="display:none;">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">대시보드</div>
+    <div class="topbar-date" id="topbarDate"></div>
+  </div>
+  <div class="content">
+
+    <!-- 대시보드 -->
+    <div class="screen active" id="screenDash">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value" id="statTotal">0</div><div class="stat-label">전체 직원</div></div>
+        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" style="color:var(--accent2)" id="statIn">0</div><div class="stat-label">오늘 출근</div></div>
+        <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-value" style="color:var(--warn)" id="statLate">0</div><div class="stat-label">지각</div></div>
+        <div class="stat-card"><div class="stat-icon">🔔</div><div class="stat-value" style="color:var(--purple)" id="statSignup">0</div><div class="stat-label">가입 대기</div></div>
+      </div>
+      <div id="pendingSignupCard" style="display:none;background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.3);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;color:var(--warn);margin-bottom:10px;">🔔 가입 승인 대기</div>
+        <div id="dashPendingList"></div>
+      </div>
+      <div class="dashboard-grid">
+        <div class="dash-card"><div class="dash-card-title">👥 오늘 출근 현황</div><div id="dashAttendList"></div></div>
+        <div class="dash-card"><div class="dash-card-title">📋 연차 승인 대기</div><div id="dashLeaveList"></div></div>
+      </div>
+    </div>
+
+    <!-- 가입 승인 -->
+    <div class="screen" id="screenSignup">
+      <div class="section-title">🔔 가입 승인 관리</div>
+      <div style="font-size:14px;font-weight:700;color:var(--warn);margin-bottom:12px;">대기중</div>
+      <div class="table-wrap" style="margin-bottom:24px;">
+        <table><thead><tr><th>이름</th><th>이메일</th><th>팀</th><th>연락처</th><th>신청일</th><th>처리</th></tr></thead>
+        <tbody id="signupPendingBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- 직원 관리 -->
+    <div class="screen" id="screenEmployee">
+      <div class="section-title">👥 직원 관리<button class="btn-add" onclick="openEmployeeModal()">+ 직원 등록</button></div>
+      <div class="filter-bar">
+        <select class="filter-select" id="empTeamFilter" onchange="renderEmployeeTable()">
+          <option value="">전체 팀</option>
+          <option value="냉장">냉장</option><option value="1층">1층</option><option value="3층">3층</option><option value="4층">4층</option><option value="5층">5층</option>
+        </select>
+        <input class="filter-input" type="text" id="empSearch" placeholder="이름 검색" oninput="renderEmployeeTable()">
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>이름</th><th>팀</th><th>직급</th><th>시급</th><th>입사일</th><th>연차</th><th>상태</th><th>관리</th></tr></thead>
+        <tbody id="empTableBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- 근태 조회 -->
+    <div class="screen" id="screenAttend">
+      <div class="section-title">⏰ 근태 조회</div>
+      <div class="filter-bar">
+        <input class="filter-input" type="month" id="attendMonth">
+        <select class="filter-select" id="attendEmpFilter"><option value="">전체 직원</option></select>
+        <button class="filter-btn" onclick="renderAttendTable()">조회</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>날짜</th><th>이름</th><th>팀</th><th>출근</th><th>퇴근</th><th>근무시간</th><th>연장</th><th>상태</th><th>수정</th></tr></thead>
+        <tbody id="attendTableBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- 급여 관리 -->
+    <div class="screen" id="screenPayroll">
+      <div class="section-title">💰 급여 관리</div>
+      <div class="filter-bar">
+        <input class="filter-input" type="month" id="payMonth">
+        <button class="filter-btn" onclick="calcAllPayroll()">급여 계산</button>
+      </div>
+      <div class="pay-grid">
+        <div class="pay-stat"><div class="pay-stat-val" id="payTotalAmt">₩0</div><div class="pay-stat-label">총 급여 합계</div></div>
+        <div class="pay-stat"><div class="pay-stat-val" id="payAvgAmt">₩0</div><div class="pay-stat-label">평균 급여</div></div>
+        <div class="pay-stat"><div class="pay-stat-val" id="payCount">0명</div><div class="pay-stat-label">계산 대상</div></div>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>이름</th><th>팀</th><th>출근일</th><th>총시간</th><th>기본급</th><th>연장수당</th><th>총 급여</th><th>확정</th></tr></thead>
+        <tbody id="payTableBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- 연차 현황 -->
+    <div class="screen" id="screenLeave">
+      <div class="section-title">📅 연차 현황</div>
+      <div class="filter-bar">
+        <select class="filter-select" id="leaveStatusFilter" onchange="renderLeaveTable()">
+          <option value="">전체</option><option value="pending">대기중</option><option value="approved">승인</option><option value="rejected">반려</option>
+        </select>
+        <select class="filter-select" id="leaveEmpFilter" onchange="renderLeaveTable()"><option value="">전체 직원</option></select>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>이름</th><th>팀</th><th>기간</th><th>일수</th><th>유형</th><th>사유</th><th>상태</th><th>처리</th></tr></thead>
+        <tbody id="leaveTableBody"></tbody></table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 직원 등록 모달 -->
+<div class="modal-overlay" id="employeeModal">
+  <div class="modal">
+    <div class="modal-title">👤 직원 등록 / 수정</div>
+    <input type="hidden" id="empEditUid">
+    <div class="info-box" id="empModalInfo" style="display:none;">이메일/비밀번호는 Firebase Auth에서 관리됩니다.<br>여기서는 직원 정보만 수정합니다.</div>
+    <div class="modal-grid">
+      <div class="modal-row"><label class="modal-label">이름 *</label><input class="modal-input" id="empName" placeholder="홍길동"></div>
+      <div class="modal-row"><label class="modal-label">이메일</label><input class="modal-input" id="empEmail" placeholder="email@email.com"></div>
+    </div>
+    <div class="modal-grid">
+      <div class="modal-row"><label class="modal-label">팀</label>
+        <select class="modal-select" id="empTeam">
+          <option>냉장</option><option>1층</option><option>3층</option><option>4층</option><option>5층</option>
+        </select>
+      </div>
+      <div class="modal-row"><label class="modal-label">직급</label>
+        <select class="modal-select" id="empRole">
+          <option value="worker">작업자</option><option value="sub_leader">부팀장</option><option value="leader">팀장</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-grid">
+      <div class="modal-row"><label class="modal-label">시급 (원)</label><input class="modal-input" id="empWage" type="number" placeholder="11000"></div>
+      <div class="modal-row"><label class="modal-label">입사일</label><input class="modal-input" id="empHireDate" type="date"></div>
+    </div>
+    <div class="modal-grid">
+      <div class="modal-row"><label class="modal-label">연락처</label><input class="modal-input" id="empPhone" placeholder="010-0000-0000"></div>
+      <div class="modal-row"><label class="modal-label">총 연차 (일)</label><input class="modal-input" id="empAnnual" type="number" placeholder="15"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeEmployeeModal()">취소</button>
+      <button class="btn-submit" onclick="saveEmployee()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 근태 수정 모달 -->
+<div class="modal-overlay" id="attendEditModal">
+  <div class="modal">
+    <div class="modal-title">✏️ 근태 수정</div>
+    <input type="hidden" id="editAttendId">
+    <div class="modal-row"><label class="modal-label">직원</label><input class="modal-input" id="editAttendName" readonly style="opacity:.6"></div>
+    <div class="modal-row"><label class="modal-label">날짜</label><input class="modal-input" id="editAttendDate" readonly style="opacity:.6"></div>
+    <div class="modal-grid">
+      <div class="modal-row"><label class="modal-label">출근시간</label><input class="modal-input" id="editClockIn" type="time"></div>
+      <div class="modal-row"><label class="modal-label">퇴근시간</label><input class="modal-input" id="editClockOut" type="time"></div>
+    </div>
+    <div class="modal-row"><label class="modal-label">수정 사유 *</label><input class="modal-input" id="editReason" placeholder="수정 사유 입력"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAttendEdit()">취소</button>
+      <button class="btn-submit" onclick="saveAttendEdit()">수정</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
+  collection, query, where, getDocs, orderBy, serverTimestamp, writeBatch }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCf5gYx6FDwAIPibfMHevFh-AZZ3587AqE",
+  authDomain: "daya-work.firebaseapp.com",
+  projectId: "daya-work",
+  storageBucket: "daya-work.firebasestorage.app",
+  messagingSenderId: "1043513379329",
+  appId: "1:1043513379329:web:e5178fa77a047cde9e8e00"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentAdmin = null;
+let allUsers = {};
+let pendingSignups = [];
+
+function showLoading(t='로딩 중...'){document.getElementById('loadingText').textContent=t;document.getElementById('loading').classList.add('show');}
+function hideLoading(){document.getElementById('loading').classList.remove('show');}
+
+// ── Auth ──
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    showLoading('관리자 확인 중...');
+    try {
+      const snap = await getDoc(doc(db,'users',user.uid));
+      if (!snap.exists() || !['admin','manager'].includes(snap.data().role)) {
+        showToast('관리자 권한이 없습니다','error');
+        await signOut(auth); hideLoading(); return;
+      }
+      currentAdmin = {uid:user.uid,...snap.data()};
+      document.getElementById('adminName').textContent = currentAdmin.name||user.email;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'flex';
+      await loadAllUsers();
+      initApp();
+      hideLoading();
+    } catch(e) { hideLoading(); showToast('오류: '+e.message,'error'); }
+  } else {
+    currentAdmin = null;
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    hideLoading();
+  }
+});
+
+window.doLogin = async function() {
+  const email=document.getElementById('loginEmail').value.trim();
+  const pw=document.getElementById('loginPw').value;
+  if(!email||!pw){showToast('입력하세요','error');return;}
+  showLoading('로그인 중...');
+  try { await signInWithEmailAndPassword(auth,email,pw); }
+  catch(e) {
+    hideLoading();
+    if(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password')showToast('이메일 또는 비밀번호 오류','error');
+    else showToast('로그인 오류: '+e.message,'error');
+  }
+}
+
+window.doLogout = async function() { await signOut(auth); }
+
+// ── 전체 직원 로드 ──
+async function loadAllUsers() {
+  const snap = await getDocs(collection(db,'users'));
+  allUsers = {};
+  snap.forEach(d => { allUsers[d.id] = d.data(); });
+}
+
+// ── 가입 대기 로드 ──
+async function loadPendingSignups() {
+  const snap = await getDocs(query(collection(db,'pending_signups'),orderBy('created_at','desc')));
+  pendingSignups = snap.docs.map(d=>({id:d.id,...d.data()}));
+  updateSignupBadge();
+}
+
+function updateSignupBadge() {
+  const cnt = pendingSignups.length;
+  const b = document.getElementById('signupBadge');
+  b.style.display = cnt>0?'inline':'none';
+  b.textContent = cnt;
+  document.getElementById('statSignup').textContent = cnt;
+}
+
+// ── 초기화 ──
+function initApp() {
+  const now=new Date();
+  const days=['일','월','화','수','목','금','토'];
+  document.getElementById('topbarDate').textContent=now.getFullYear()+'년 '+(now.getMonth()+1)+'월 '+now.getDate()+'일 ('+days[now.getDay()]+')';
+  document.getElementById('attendMonth').value=now.getFullYear()+'-'+pad(now.getMonth()+1);
+  document.getElementById('payMonth').value=now.getFullYear()+'-'+pad(now.getMonth()+1);
+  populateEmpFilters();
+  renderDashboard();
+}
+
+function populateEmpFilters() {
+  const activeUsers = Object.entries(allUsers).filter(([,u])=>u.status==='active');
+  ['attendEmpFilter','leaveEmpFilter'].forEach(id=>{
+    const sel=document.getElementById(id);
+    sel.innerHTML='<option value="">전체 직원</option>';
+    activeUsers.forEach(([uid,u])=>sel.innerHTML+=`<option value="${uid}">${u.name} (${u.team})</option>`);
+  });
+}
+
+// ── 대시보드 ──
+async function renderDashboard() {
+  await loadPendingSignups();
+  const today=getDateStr(new Date());
+  const q=query(collection(db,'attendance'),where('date','==',today));
+  const snap=await getDocs(q);
+  const todayRecs={};
+  snap.forEach(d=>{todayRecs[d.data().uid]=d.data();});
+
+  const active=Object.entries(allUsers).filter(([,u])=>u.status==='active');
+  document.getElementById('statTotal').textContent=active.length;
+  document.getElementById('statIn').textContent=Object.values(todayRecs).filter(r=>r.clock_in).length;
+  document.getElementById('statLate').textContent=Object.values(todayRecs).filter(r=>r.status==='late').length;
+
+  // 출근 현황
+  let html='';
+  active.forEach(([uid,u])=>{
+    const rec=todayRecs[uid];
+    let badge,cls;
+    if(!rec){badge='미출근';cls='badge-absent';}
+    else if(rec.status==='late'){badge='지각 '+rec.clock_in;cls='badge-late';}
+    else if(!rec.clock_out){badge='근무중 '+rec.clock_in;cls='badge-in';}
+    else{badge='퇴근 '+rec.clock_out;cls='badge-out';}
+    html+=`<div class="employee-row"><div><div class="emp-name">${u.name}</div><div class="emp-team">${u.team}</div></div><span class="status-badge ${cls}">${badge}</span></div>`;
+  });
+  document.getElementById('dashAttendList').innerHTML=html||'<div style="color:var(--text2);font-size:13px;padding:20px 0;text-align:center">데이터 없음</div>';
+
+  // 가입 대기
+  const pc=document.getElementById('pendingSignupCard');
+  if(pendingSignups.length>0){
+    pc.style.display='block';
+    document.getElementById('dashPendingList').innerHTML=pendingSignups.map(p=>`
+      <div class="pending-row">
+        <div><div style="font-weight:700;font-size:13px;">${p.name}</div><div style="font-size:12px;color:var(--text2)">${p.team} · ${p.email}</div></div>
+        <div><button class="btn-approve" onclick="approveSignup('${p.uid}','${p.id}','${p.name}')">승인</button><button class="btn-reject" onclick="rejectSignup('${p.uid}','${p.id}','${p.name}')">거부</button></div>
+      </div>`).join('');
+  } else pc.style.display='none';
+
+  // 연차 대기
+  const lq=query(collection(db,'leaves'),where('status','==','pending'));
+  const lsnap=await getDocs(lq);
+  let lhtml='';
+  lsnap.forEach(d=>{
+    const l=d.data();
+    lhtml+=`<div class="pending-row">
+      <div><div style="font-weight:700;font-size:13px;">${l.name}</div><div style="font-size:12px;color:var(--text2)">${l.start_date}${l.end_date!==l.start_date?' ~ '+l.end_date:''} (${l.days}일)</div></div>
+      <div><button class="btn-approve" onclick="processLeave('${d.id}','approved','${l.uid}',${l.days})">승인</button><button class="btn-reject" onclick="processLeave('${d.id}','rejected','${l.uid}',${l.days})">반려</button></div>
+    </div>`;
+  });
+  document.getElementById('dashLeaveList').innerHTML=lhtml||'<div style="color:var(--text2);font-size:13px;padding:20px 0;text-align:center">대기중인 연차 없음</div>';
+}
+
+// ── 가입 승인 ──
+async function renderSignupTable() {
+  await loadPendingSignups();
+  const body=document.getElementById('signupPendingBody');
+  if(pendingSignups.length===0){body.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:30px">대기중인 가입 신청 없음</td></tr>';return;}
+  body.innerHTML=pendingSignups.map(p=>`<tr>
+    <td><strong>${p.name}</strong></td><td>${p.email}</td><td>${p.team}</td><td>${p.phone||'-'}</td>
+    <td>${p.created_at?.toDate?p.created_at.toDate().toLocaleDateString('ko'):'-'}</td>
+    <td><button class="btn-approve" onclick="approveSignup('${p.uid}','${p.id}','${p.name}')">승인</button><button class="btn-reject" onclick="rejectSignup('${p.uid}','${p.id}','${p.name}')">거부</button></td>
+  </tr>`).join('');
+}
+
+window.approveSignup = async function(uid,pendingId,name) {
+  const wage=prompt(name+'님 시급을 입력하세요 (원)','11000');
+  if(wage===null)return;
+  const annual=prompt('총 연차 일수를 입력하세요','15');
+  if(annual===null)return;
+  showLoading('승인 처리 중...');
+  try {
+    const batch=writeBatch(db);
+    batch.update(doc(db,'users',uid),{status:'active',hourly_wage:parseInt(wage)||11000,annual_total:parseInt(annual)||15});
+    batch.delete(doc(db,'pending_signups',pendingId));
+    await batch.commit();
+    await loadAllUsers();
+    populateEmpFilters();
+    hideLoading();
+    renderDashboard();
+    if(document.getElementById('screenSignup').classList.contains('active'))renderSignupTable();
+    showToast(name+' 승인 완료 ✓','success');
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+window.rejectSignup = async function(uid,pendingId,name) {
+  if(!confirm(name+'님의 가입을 거부하시겠습니까?'))return;
+  showLoading('처리 중...');
+  try {
+    const batch=writeBatch(db);
+    batch.delete(doc(db,'users',uid));
+    batch.delete(doc(db,'pending_signups',pendingId));
+    await batch.commit();
+    hideLoading();
+    renderDashboard();
+    if(document.getElementById('screenSignup').classList.contains('active'))renderSignupTable();
+    showToast(name+' 가입 거부됨','warn');
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+// ── 직원 관리 ──
+window.renderEmployeeTable = function() {
+  const teamF=document.getElementById('empTeamFilter').value;
+  const search=document.getElementById('empSearch').value.trim().toLowerCase();
+  const roleMap={worker:'작업자',sub_leader:'부팀장',leader:'팀장',admin:'관리자'};
+  const rows=Object.entries(allUsers).filter(([,u])=>{
+    if(teamF&&u.team!==teamF)return false;
+    if(search&&!u.name.toLowerCase().includes(search))return false;
+    return true;
+  });
+  document.getElementById('empTableBody').innerHTML=rows.map(([uid,u])=>`<tr>
+    <td><strong>${u.name}</strong></td><td>${u.team||'-'}</td><td>${roleMap[u.role]||u.role}</td>
+    <td>${(u.hourly_wage||0).toLocaleString()}원</td><td>${u.hire_date||'-'}</td>
+    <td><span style="color:var(--accent2)">${(u.annual_total||0)-(u.annual_used||0)}일</span> / ${u.annual_total||0}일</td>
+    <td><span class="status-badge ${u.status==='active'?'badge-in':u.status==='pending'?'badge-pending':'badge-absent'}">${u.status==='active'?'재직':u.status==='pending'?'승인대기':'퇴직'}</span></td>
+    <td><button class="td-btn" onclick="editEmployee('${uid}')">수정</button><button class="td-btn" style="color:var(--warn)" onclick="toggleStatus('${uid}','${u.name}','${u.status}')">${u.status==='active'?'퇴직':'복직'}</button></td>
+  </tr>`).join('');
+}
+
+window.openEmployeeModal = function() {
+  document.getElementById('empEditUid').value='';
+  document.getElementById('empName').value='';
+  document.getElementById('empEmail').value='';
+  document.getElementById('empWage').value='11000';
+  document.getElementById('empHireDate').value=getDateStr(new Date());
+  document.getElementById('empAnnual').value='15';
+  document.getElementById('empPhone').value='';
+  document.getElementById('empModalInfo').style.display='none';
+  document.getElementById('employeeModal').classList.add('open');
+}
+
+window.editEmployee = function(uid) {
+  const u=allUsers[uid];if(!u)return;
+  document.getElementById('empEditUid').value=uid;
+  document.getElementById('empName').value=u.name||'';
+  document.getElementById('empEmail').value=u.email||'';
+  document.getElementById('empTeam').value=u.team||'1층';
+  document.getElementById('empRole').value=u.role||'worker';
+  document.getElementById('empWage').value=u.hourly_wage||11000;
+  document.getElementById('empHireDate').value=u.hire_date||'';
+  document.getElementById('empAnnual').value=u.annual_total||15;
+  document.getElementById('empPhone').value=u.phone||'';
+  document.getElementById('empModalInfo').style.display='block';
+  document.getElementById('employeeModal').classList.add('open');
+}
+
+window.closeEmployeeModal = function(){document.getElementById('employeeModal').classList.remove('open');}
+
+window.saveEmployee = async function() {
+  const uid=document.getElementById('empEditUid').value;
+  const name=document.getElementById('empName').value.trim();
+  if(!name){showToast('이름을 입력하세요','error');return;}
+  showLoading('저장 중...');
+  try {
+    const data={
+      name, team:document.getElementById('empTeam').value,
+      role:document.getElementById('empRole').value,
+      hourly_wage:parseInt(document.getElementById('empWage').value)||11000,
+      hire_date:document.getElementById('empHireDate').value,
+      annual_total:parseInt(document.getElementById('empAnnual').value)||15,
+      phone:document.getElementById('empPhone').value,
+      email:document.getElementById('empEmail').value,
+    };
+    if(uid) {
+      await updateDoc(doc(db,'users',uid),data);
+    } else {
+      // 직접 등록은 관리자가 Firebase Auth에서 계정 먼저 생성 후 UID 입력 필요
+      showToast('직접 등록은 작업자 앱에서 회원가입 후 승인하세요','warn');
+      hideLoading(); return;
+    }
+    await loadAllUsers();
+    populateEmpFilters();
+    closeEmployeeModal(); hideLoading();
+    renderEmployeeTable();
+    showToast('저장 완료 ✓','success');
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+window.toggleStatus = async function(uid,name,status) {
+  if(!confirm(name+'님을 '+(status==='active'?'퇴직':'복직')+'처리하시겠습니까?'))return;
+  showLoading('처리 중...');
+  try {
+    await updateDoc(doc(db,'users',uid),{status:status==='active'?'inactive':'active'});
+    await loadAllUsers(); hideLoading(); renderEmployeeTable();
+    showToast(name+' '+(status==='active'?'퇴직':'복직')+' 처리','warn');
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+// ── 근태 조회 ──
+window.renderAttendTable = async function() {
+  const ym=document.getElementById('attendMonth').value;
+  const uid=document.getElementById('attendEmpFilter').value;
+  showLoading('조회 중...');
+  try {
+    let q=query(collection(db,'attendance'),where('date','>=',ym+'-01'),where('date','<=',ym+'-31'),orderBy('date','desc'));
+    const snap=await getDocs(q);
+    let records=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(uid)records=records.filter(r=>r.uid===uid);
+    const statusMap={normal:'정상',late:'지각',early_leave:'조퇴'};
+    const tbody=document.getElementById('attendTableBody');
+    if(!records.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:40px">조회된 기록 없음</td></tr>';hideLoading();return;}
+    tbody.innerHTML=records.map(r=>{
+      const m=r.total_minutes||0, ot=m>480?m-480:0;
+      const h=n=>Math.floor(n/60)+'h'+(n%60>0?n%60+'m':'');
+      return `<tr>
+        <td>${r.date}</td><td><strong>${r.name||'-'}</strong></td><td>${r.team||'-'}</td>
+        <td>${r.clock_in||'-'}</td><td>${r.clock_out||'<span style="color:var(--accent)">근무중</span>'}</td>
+        <td>${m?h(m):'-'}</td><td>${ot?'<span style="color:var(--warn)">'+h(ot)+'</span>':'-'}</td>
+        <td><span class="status-badge ${r.status==='late'?'badge-late':'badge-in'}">${statusMap[r.status]||r.status}</span></td>
+        <td><button class="td-btn" onclick="openAttendEdit('${r.id}','${r.name||''}','${r.date}','${r.clock_in||''}','${r.clock_out||''}')">수정</button></td>
+      </tr>`;
+    }).join('');
+    hideLoading();
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+window.openAttendEdit = function(id,name,date,cin,cout) {
+  document.getElementById('editAttendId').value=id;
+  document.getElementById('editAttendName').value=name;
+  document.getElementById('editAttendDate').value=date;
+  document.getElementById('editClockIn').value=cin;
+  document.getElementById('editClockOut').value=cout;
+  document.getElementById('editReason').value='';
+  document.getElementById('attendEditModal').classList.add('open');
+}
+window.closeAttendEdit=function(){document.getElementById('attendEditModal').classList.remove('open');}
+
+window.saveAttendEdit = async function() {
+  const id=document.getElementById('editAttendId').value;
+  const reason=document.getElementById('editReason').value.trim();
+  if(!reason){showToast('수정 사유를 입력하세요','error');return;}
+  const cin=document.getElementById('editClockIn').value;
+  const cout=document.getElementById('editClockOut').value;
+  const [ih,im]=cin.split(':').map(Number);
+  const isLate=ih>9||(ih===9&&im>0);
+  const totalMin=cout?Math.max(0,(parseInt(cout.split(':')[0])*60+parseInt(cout.split(':')[1]))-(ih*60+im)-60):null;
+  showLoading('수정 중...');
+  try {
+    await updateDoc(doc(db,'attendance',id),{
+      clock_in:cin,clock_out:cout||null,total_minutes:totalMin,
+      status:isLate?'late':'normal',
+      edit_reason:reason,edited_by:currentAdmin.uid,edited_at:serverTimestamp()
+    });
+    closeAttendEdit();hideLoading();
+    renderAttendTable();showToast('근태 수정 완료','success');
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+// ── 급여 계산 ──
+window.calcAllPayroll = async function() {
+  const ym=document.getElementById('payMonth').value;
+  showLoading('급여 계산 중...');
+  try {
+    const snap=await getDocs(query(collection(db,'attendance'),where('date','>=',ym+'-01'),where('date','<=',ym+'-31')));
+    const byUser={};
+    snap.forEach(d=>{
+      const r=d.data();
+      if(!r.clock_out)return;
+      if(!byUser[r.uid])byUser[r.uid]={totalMin:0,otMin:0,days:0};
+      byUser[r.uid].days++;
+      const m=r.total_minutes||0;
+      byUser[r.uid].totalMin+=m;
+      if(m>480)byUser[r.uid].otMin+=m-480;
+    });
+    const activeUsers=Object.entries(allUsers).filter(([,u])=>u.status==='active');
+    let totalPay=0;
+    document.getElementById('payTableBody').innerHTML=activeUsers.map(([uid,u])=>{
+      const d=byUser[uid]||{totalMin:0,otMin:0,days:0};
+      const basePay=Math.floor((d.totalMin-d.otMin)/60*(u.hourly_wage||0));
+      const otPay=Math.floor(d.otMin/60*(u.hourly_wage||0)*1.5);
+      const total=basePay+otPay;
+      totalPay+=total;
+      return `<tr>
+        <td><strong>${u.name}</strong></td><td>${u.team}</td><td>${d.days}일</td>
+        <td>${Math.floor(d.totalMin/60)}h</td><td>${basePay.toLocaleString()}원</td>
+        <td>${otPay>0?'<span style="color:var(--warn)">'+otPay.toLocaleString()+'원</span>':'-'}</td>
+        <td><strong style="color:var(--accent2)">${total.toLocaleString()}원</strong></td>
+        <td><button class="td-btn" onclick="this.previousElementSibling&&null;this.textContent='확정 ✓';this.disabled=true;">확정</button></td>
+      </tr>`;
+    }).join('');
+    const cnt=activeUsers.length;
+    document.getElementById('payTotalAmt').textContent='₩'+totalPay.toLocaleString();
+    document.getElementById('payAvgAmt').textContent='₩'+(cnt?Math.floor(totalPay/cnt):0).toLocaleString();
+    document.getElementById('payCount').textContent=cnt+'명';
+    hideLoading();showToast(ym+' 급여 계산 완료','success');
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+// ── 연차 처리 ──
+window.processLeave = async function(leaveId,status,uid,days) {
+  showLoading('처리 중...');
+  try {
+    const batch=writeBatch(db);
+    batch.update(doc(db,'leaves',leaveId),{status,approver:currentAdmin.uid,approved_at:serverTimestamp()});
+    if(status==='approved'&&uid) {
+      const u=allUsers[uid];
+      if(u) batch.update(doc(db,'users',uid),{annual_used:(u.annual_used||0)+days});
+    }
+    await batch.commit();
+    await loadAllUsers();
+    hideLoading();renderDashboard();
+    if(document.getElementById('screenLeave').classList.contains('active'))renderLeaveTable();
+    showToast(status==='approved'?'연차 승인됨':'연차 반려됨',status==='approved'?'success':'warn');
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+window.renderLeaveTable = async function() {
+  const statusF=document.getElementById('leaveStatusFilter').value;
+  const uidF=document.getElementById('leaveEmpFilter').value;
+  showLoading('조회 중...');
+  try {
+    let q=query(collection(db,'leaves'),orderBy('created_at','desc'));
+    const snap=await getDocs(q);
+    let leaves=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(statusF)leaves=leaves.filter(l=>l.status===statusF);
+    if(uidF)leaves=leaves.filter(l=>l.uid===uidF);
+    const typeMap={annual:'연차',half_am:'반차(오전)',half_pm:'반차(오후)'};
+    const statusMap={pending:['대기중','badge-pending'],approved:['승인','badge-approved'],rejected:['반려','badge-rejected']};
+    const tbody=document.getElementById('leaveTableBody');
+    if(!leaves.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:40px">내역 없음</td></tr>';hideLoading();return;}
+    tbody.innerHTML=leaves.map(l=>{
+      const [st,sc]=statusMap[l.status]||['대기중','badge-pending'];
+      const action=l.status==='pending'?`<button class="btn-approve" onclick="processLeave('${l.id}','approved','${l.uid}',${l.days})">승인</button><button class="btn-reject" onclick="processLeave('${l.id}','rejected','${l.uid}',${l.days})">반려</button>`:'-';
+      return `<tr>
+        <td><strong>${l.name||'-'}</strong></td><td>${l.team||'-'}</td>
+        <td>${l.start_date}${l.end_date!==l.start_date?' ~ '+l.end_date:''}</td>
+        <td>${l.days}일</td><td>${typeMap[l.type]||l.type}</td><td>${l.reason||'-'}</td>
+        <td><span class="status-badge ${sc}">${st}</span></td><td>${action}</td>
+      </tr>`;
+    }).join('');
+    hideLoading();
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+// ── 메뉴 전환 ──
+const menuTitles={Dash:'대시보드',Signup:'가입 승인',Employee:'직원 관리',Attend:'근태 조회',Payroll:'급여 관리',Leave:'연차 현황'};
+window.switchMenu = function(name) {
+  ['Dash','Signup','Employee','Attend','Payroll','Leave'].forEach(n=>{
+    document.getElementById('screen'+n).classList.remove('active');
+    document.getElementById('menu'+n).classList.remove('active');
+  });
+  document.getElementById('screen'+name).classList.add('active');
+  document.getElementById('menu'+name).classList.add('active');
+  document.getElementById('topbarTitle').textContent=menuTitles[name];
+  if(name==='Signup')renderSignupTable();
+  if(name==='Employee')renderEmployeeTable();
+  if(name==='Attend')renderAttendTable();
+  if(name==='Leave')renderLeaveTable();
+}
+
+// ── 유틸 ──
+function pad(n){return String(n).padStart(2,'0');}
+function getDateStr(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+
+let toastTimer=null;
+window.showToast=function(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast'+(type?' '+type:'');t.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+document.getElementById('loginPw').addEventListener('keydown',e=>{if(e.key==='Enter')window.doLogin();});
+</script>
+</body>
+</html>
