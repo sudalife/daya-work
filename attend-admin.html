@@ -111,6 +111,35 @@
   .btn-add{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
   .info-box{background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.2);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;}
   .info-box strong{color:var(--accent);}
+
+  /* ── 모바일 하단 탭바 ── */
+  .mobile-tabs{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:200;justify-content:space-around;}
+  .mobile-tab{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;font-size:10px;color:var(--text2);cursor:pointer;border:none;background:none;font-family:inherit;gap:3px;}
+  .mobile-tab.active{color:var(--accent);}
+  .mobile-tab-icon{font-size:20px;}
+
+  @media (max-width: 768px) {
+    .sidebar{display:none;}
+    .main{margin-left:0 !important;padding-bottom:70px;}
+    .mobile-tabs{display:flex;}
+    .topbar{padding:12px 16px;}
+    .topbar-title{font-size:16px;}
+    .topbar-date{font-size:11px;}
+    .content{padding:16px 12px;}
+    .stat-grid{grid-template-columns:1fr 1fr;gap:10px;}
+    .stat-card{padding:14px;}
+    .stat-value{font-size:24px;}
+    .dashboard-grid{grid-template-columns:1fr;}
+    .pay-grid{grid-template-columns:1fr 1fr;}
+    .modal-grid{grid-template-columns:1fr;}
+    .filter-bar{gap:8px;}
+    .filter-select,.filter-input{font-size:12px;padding:7px 10px;}
+    th{padding:8px 10px;font-size:11px;}
+    td{padding:8px 10px;font-size:12px;}
+    .login-box{width:calc(100% - 32px);padding:28px 20px;}
+    .section-title{font-size:14px;}
+    .btn-add{font-size:12px;padding:7px 12px;}
+  }
 </style>
 </head>
 <body>
@@ -249,6 +278,15 @@
       </div>
     </div>
 
+  </div>
+  <!-- 모바일 하단 탭바 -->
+  <div class="mobile-tabs">
+    <button class="mobile-tab active" id="mTabDash" onclick="switchMenu('Dash')"><span class="mobile-tab-icon">📊</span>대시보드</button>
+    <button class="mobile-tab" id="mTabSignup" onclick="switchMenu('Signup')"><span class="mobile-tab-icon">🔔</span>가입승인<span id="mSignupBadge" style="display:none;background:var(--warn);color:#000;border-radius:8px;padding:0 5px;font-size:10px;margin-left:2px">0</span></button>
+    <button class="mobile-tab" id="mTabEmployee" onclick="switchMenu('Employee')"><span class="mobile-tab-icon">👥</span>직원</button>
+    <button class="mobile-tab" id="mTabAttend" onclick="switchMenu('Attend')"><span class="mobile-tab-icon">⏰</span>근태</button>
+    <button class="mobile-tab" id="mTabPayroll" onclick="switchMenu('Payroll')"><span class="mobile-tab-icon">💰</span>급여</button>
+    <button class="mobile-tab" id="mTabLeave" onclick="switchMenu('Leave')"><span class="mobile-tab-icon">📅</span>연차</button>
   </div>
 </div>
 
@@ -768,6 +806,11 @@ window.switchMenu = function(name) {
   if(name==='Employee')renderEmployeeTable();
   if(name==='Attend')renderAttendTable();
   if(name==='Leave')renderLeaveTable();
+  // 모바일 탭 동기화
+  ['Dash','Signup','Employee','Attend','Payroll','Leave'].forEach(n=>{
+    const mt=document.getElementById('mTab'+n);
+    if(mt)mt.classList.toggle('active',n===name);
+  });
 }
 
 // ── 유틸 ──
