@@ -694,8 +694,11 @@ window.renderEmployeeTable = function() {
     <td><span class="status-badge ${u.status==='active'?'badge-in':u.status==='pending'?'badge-pending':'badge-absent'}">${u.status==='active'?'재직':u.status==='pending'?'승인대기':'퇴직'}</span></td>
     <td>
       ${u.status==='pending'
-        ? `<button class="td-btn" style="color:var(--accent2);border-color:var(--accent2)" onclick="openApproveFromEmployee('${uid}','${u.name}')">승인</button>`
-        : `<button class="td-btn" onclick="editEmployee('${uid}')">수정</button><button class="td-btn" style="color:var(--warn)" onclick="toggleStatus('${uid}','${u.name}','${u.status}')">${u.status==='active'?'퇴직':'복직'}</button>`
+        ? `<button class="td-btn" style="color:var(--accent2);border-color:var(--accent2)" onclick="openApproveFromEmployee('${uid}','${u.name}')">승인</button>
+           <button class="td-btn" style="color:var(--danger)" onclick="deleteEmployee('${uid}','${u.name}')">삭제</button>`
+        : `<button class="td-btn" onclick="editEmployee('${uid}')">수정</button>
+           <button class="td-btn" style="color:var(--warn)" onclick="toggleStatus('${uid}','${u.name}','${u.status}')">${u.status==='active'?'퇴직':'복직'}</button>
+           <button class="td-btn" style="color:var(--danger)" onclick="deleteEmployee('${uid}','${u.name}')">삭제</button>`
       }
     </td>
   </tr>`).join('');
@@ -767,6 +770,24 @@ window.toggleStatus = async function(uid,name,status) {
     await updateDoc(doc(db,'users',uid),{status:status==='active'?'inactive':'active'});
     await loadAllUsers(); hideLoading(); renderEmployeeTable();
     showToast(name+' '+(status==='active'?'퇴직':'복직')+' 처리','warn');
+  } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
+}
+
+window.deleteEmployee = async function(uid, name) {
+  if(!confirm(name+'님을 완전히 삭제하시겠습니까?\n출퇴근/연차 기록은 유지됩니다.')) return;
+  showLoading('삭제 중...');
+  try {
+    const batch = writeBatch(db);
+    batch.delete(doc(db,'users',uid));
+    // pending_signups에도 있으면 같이 삭제
+    const psnap = await getDocs(query(collection(db,'pending_signups'), where('uid','==',uid)));
+    psnap.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    await loadAllUsers();
+    populateEmpFilters();
+    hideLoading();
+    renderEmployeeTable();
+    showToast(name+' 삭제 완료','success');
   } catch(e){hideLoading();showToast('오류: '+e.message,'error');}
 }
 
