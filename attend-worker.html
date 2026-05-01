@@ -414,9 +414,10 @@ async function loadSettings() {
 
 // ── 로그인 ──
 window.doLogin = async function() {
-  const email = document.getElementById('loginEmail').value.trim();
+  const id = document.getElementById('loginEmail').value.trim().toLowerCase();
   const pw = document.getElementById('loginPw').value;
-  if (!email || !pw) { showToast('이메일과 비밀번호를 입력하세요', 'error'); return; }
+  if (!id || !pw) { showToast('아이디와 비밀번호를 입력하세요', 'error'); return; }
+  const email = id + '@daya-work.com';
   showLoading('로그인 중...');
   try {
     await signInWithEmailAndPassword(auth, email, pw);
