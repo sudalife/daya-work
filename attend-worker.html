@@ -57,7 +57,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .cwd{display:grid;grid-template-columns:repeat(7,1fr);background:var(--surface2);}
 .wd{text-align:center;padding:8px 0;font-size:11px;font-weight:700;color:var(--text2);}
 .cdays{display:grid;grid-template-columns:repeat(7,1fr);}
-.cday{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-top:1px solid var(--border);cursor:pointer;}
+.cday{aspect-ratio:1;min-height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-top:1px solid var(--border);cursor:pointer;}
 .cday:hover{background:var(--surface2);}
 .cday.emp{pointer-events:none;}
 .dnum{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:13px;}
@@ -119,14 +119,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   <div class="box">
     <label class="fl">아이디</label><input class="fi" id="LID" type="text" placeholder="아이디 입력" autocomplete="off">
     <label class="fl">비밀번호</label><input class="fi" id="LPW" type="password" placeholder="비밀번호 입력" style="margin-bottom:0">
-    <button class="btnP" onclick="doLogin()">로그인</button>
-    <button class="btnS" onclick="showSU()">처음 사용하시나요? 회원가입</button>
+    <button class="btnP" id="loginBtn">로그인</button>
+    <button class="btnS" id="signupBtn">처음 사용하시나요? 회원가입</button>
   </div>
 </div>
 <div class="auth top" id="suSc" style="display:none">
   <div style="width:100%;max-width:440px">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <button class="btnLO" onclick="hideSU()">← 뒤로</button>
+      <button class="btnLO" id="backBtn">← 뒤로</button>
       <span style="font-size:17px;font-weight:900">회원가입</span>
     </div>
     <div class="ib">가입 후 <strong>관리자 승인</strong>이 완료되면 로그인 가능합니다.</div>
@@ -138,14 +138,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <label class="fl">연락처</label><input class="fi" id="SPH" type="tel" placeholder="010-0000-0000">
       <label class="fl">팀</label>
       <select class="fsel" id="ST"><option>냉장</option><option>1층</option><option>3층</option><option>4층</option><option>5층</option></select>
-      <button class="btnP" onclick="doSignup()" style="margin-top:0">가입 신청하기</button>
+      <button class="btnP" id="signupSubmitBtn" style="margin-top:0">가입 신청하기</button>
     </div>
   </div>
 </div>
 <div id="APP" style="display:none">
   <div class="header">
     <div style="font-size:15px;font-weight:700">📦 <span id="HN"></span></div>
-    <button class="btnLO" onclick="doLogout()">로그아웃</button>
+    <button class="btnLO" id="logoutBtn">로그아웃</button>
   </div>
   <div id="sHome" class="screen active">
     <div style="margin-bottom:16px">
@@ -160,7 +160,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
         <span class="stm" id="STM"></span>
       </div>
       <div class="ltime" id="CLK">--:--:--</div>
-      <button class="bIN" id="CBTN" onclick="handleClock()">출근하기</button>
+      <button class="bIN" id="CBTN">출근하기</button>
       <div class="gtag" id="GTAG">📍 GPS 확인 중...</div>
       <button class="bFIX" id="FIXBTN" onclick="openFix()">✏️ 출근 기록 수정 요청</button>
     </div>
@@ -173,9 +173,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   </div>
   <div id="sCal" class="screen">
     <div class="ch">
-      <button class="cnav" onclick="chM(-1)">&#8249;</button>
+      <button class="cnav" id="prevMon">&#8249;</button>
       <div class="cmon" id="CMON"></div>
-      <button class="cnav" onclick="chM(1)">&#8250;</button>
+      <button class="cnav" id="nextMon">&#8250;</button>
     </div>
     <div class="pc">
       <div class="pclbl">이번달 예상 급여</div>
@@ -202,14 +202,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
       <div class="lvdiv"></div>
       <div><div class="lvn r" id="LVR">-</div><div class="lvl">잔여</div></div>
     </div>
-    <button class="bLV" onclick="openLV()">+ 연차 신청하기</button>
+    <button class="bLV" id="openLVBtn">+ 연차 신청하기</button>
     <div class="stit">신청 내역</div>
     <div id="LVLIST"><div class="emp">신청 내역이 없습니다</div></div>
   </div>
   <div class="tabs">
-    <button class="tab active" id="tHome" onclick="goTab('Home')"><span class="ti">🏠</span>홈</button>
-    <button class="tab" id="tCal" onclick="goTab('Cal')"><span class="ti">📅</span>캘린더</button>
-    <button class="tab" id="tLeave" onclick="goTab('Leave')"><span class="ti">🌴</span>연차</button>
+    <button class="tab active" id="tHome" id="tHome"><span class="ti">🏠</span>홈</button>
+    <button class="tab" id="tCal" id="tCal"><span class="ti">📅</span>캘린더</button>
+    <button class="tab" id="tLeave" id="tLeave"><span class="ti">🌴</span>연차</button>
   </div>
 </div>
 <div class="ov" id="LVov">
@@ -220,7 +220,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <label class="ml">시작일</label><input class="mi" type="date" id="LVs" onchange="onLVs()">
     <div id="LVer"><label class="ml">종료일</label><input class="mi" type="date" id="LVe"></div>
     <label class="ml">사유 (선택)</label><input class="mi" type="text" id="LVr" placeholder="사유" style="margin-bottom:0">
-    <div class="mbr"><button class="bCC" onclick="closeLV()">취소</button><button class="bSB" onclick="submitLV()">신청</button></div>
+    <div class="mbr"><button class="bCC" id="closeLVBtn">취소</button><button class="bSB" id="submitLVBtn">신청</button></div>
   </div>
 </div>
 <div class="cov" id="CONFov">
@@ -228,7 +228,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div style="font-size:36px;margin-bottom:10px" id="CICO">🟢</div>
     <div style="font-size:17px;font-weight:900;margin-bottom:7px" id="CTIT"></div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.5;white-space:pre-line" id="CMSG"></div>
-    <div class="mbr"><button class="bCC" onclick="closeConf()">취소</button><button class="bSB" onclick="doConf()">확인</button></div>
+    <div class="mbr"><button class="bCC" id="closeConfBtn">취소</button><button class="bSB" id="doConfBtn">확인</button></div>
   </div>
 </div>
 <div class="ov" id="FIXov">
@@ -237,7 +237,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <div class="ib">잘못된 출근 시간을 관리자에게 수정 요청합니다.</div>
     <label class="ml">실제 출근 시간</label><input class="mi" type="time" id="FIXt">
     <label class="ml">사유 *</label><input class="mi" type="text" id="FIXr" placeholder="예) GPS 오류" style="margin-bottom:0">
-    <div class="mbr"><button class="bCC" onclick="closeFix()">취소</button><button class="bSB" onclick="submitFix()">요청 보내기</button></div>
+    <div class="mbr"><button class="bCC" id="closeFixBtn">취소</button><button class="bSB" id="submitFixBtn">요청 보내기</button></div>
   </div>
 </div>
 <div class="toast" id="TOAST"></div>
@@ -355,8 +355,8 @@ window.handleClock=function(){
   if(cSt==='none'){
     let msg=ts+'에 출근 처리하시겠습니까?';
     if(gpsPos){const dist=calcD(gpsPos.lat,gpsPos.lng,CS.lat,CS.lng);if(dist>CS.radius)msg+='\n\n⚠️ 회사 반경 외 ('+Math.round(dist)+'m)\n수동 출근으로 처리됩니다.';}
-    showConf('🟢','출근 처리',msg,()=>doCI('manual'));
-  }else{showConf('🔴','퇴근 처리',ts+'에 퇴근 처리하시겠습니까?',doCO);}
+    window.showConf('🟢','출근 처리',msg,()=>doCI('manual'));
+  }else{window.showConf('🔴','퇴근 처리',ts+'에 퇴근 처리하시겠습니까?',doCO);}
 };
 async function doCI(method){
   const snap=await getDocs(query(collection(db,'attendance'),where('uid','==',CU.uid),where('date','==',tod())));
@@ -459,12 +459,38 @@ window.submitFix=async function(){
 };
 window.goTab=function(name){['Home','Cal','Leave'].forEach(n=>{G('s'+n).classList.remove('active');G('t'+n).classList.remove('active');});G('s'+name).classList.add('active');G('t'+name).classList.add('active');if(name==='Cal')renderCal();if(name==='Leave')updateLeaveUI();};
 window.showConf=function showConf(icon,title,msg,cb){G('CICO').textContent=icon;G('CTIT').textContent=title;G('CMSG').textContent=msg;confCb=cb;G('CONFov').classList.add('open');}
-window.closeConf=()=>{confCb=null;G('CONFov').classList.remove('open');};
-window.doConf=()=>{closeConf();if(confCb)confCb();};
+window.closeConf=function(){confCb=null;G('CONFov').classList.remove('open');};
+window.doConf=function(){const cb=confCb;confCb=null;G('CONFov').classList.remove('open');if(cb)cb();};
 let curTab='Home';const _gt=window.goTab;window.goTab=function(n){curTab=n;_gt(n);};
 window.addEventListener('popstate',()=>{if(G('APP').style.display!=='none'){if(curTab!=='Home')window.goTab('Home');else history.pushState(null,'',location.href);}});
 history.pushState(null,'',location.href);
 G('LPW').addEventListener('keydown',e=>{if(e.key==='Enter')window.doLogin();});
+
+// 모든 버튼 이벤트 직접 연결
+setTimeout(()=>{
+  const b=id=>document.getElementById(id);
+  if(b('loginBtn'))b('loginBtn').onclick=()=>window.doLogin();
+  if(b('signupBtn'))b('signupBtn').onclick=()=>window.showSU();
+  if(b('backBtn'))b('backBtn').onclick=()=>window.hideSU();
+  if(b('signupSubmitBtn'))b('signupSubmitBtn').onclick=()=>window.doSignup();
+  if(b('logoutBtn'))b('logoutBtn').onclick=()=>window.doLogout();
+  if(b('CBTN'))b('CBTN').onclick=()=>window.handleClock();
+  if(b('FIXBTN'))b('FIXBTN').onclick=()=>window.openFix();
+  if(b('tHome'))b('tHome').onclick=()=>window.goTab('Home');
+  if(b('tCal'))b('tCal').onclick=()=>window.goTab('Cal');
+  if(b('tLeave'))b('tLeave').onclick=()=>window.goTab('Leave');
+  if(b('openLVBtn'))b('openLVBtn').onclick=()=>window.openLV();
+  if(b('closeLVBtn'))b('closeLVBtn').onclick=()=>window.closeLV();
+  if(b('submitLVBtn'))b('submitLVBtn').onclick=()=>window.submitLV();
+  if(b('closeConfBtn'))b('closeConfBtn').onclick=()=>window.closeConf();
+  if(b('doConfBtn'))b('doConfBtn').onclick=()=>window.doConf();
+  if(b('closeFixBtn'))b('closeFixBtn').onclick=()=>window.closeFix();
+  if(b('submitFixBtn'))b('submitFixBtn').onclick=()=>window.submitFix();
+  if(b('prevMon'))b('prevMon').onclick=()=>window.chM(-1);
+  if(b('nextMon'))b('nextMon').onclick=()=>window.chM(1);
+  if(b('LVtp'))b('LVtp').onchange=()=>window.onLVtp();
+  if(b('LVs'))b('LVs').onchange=()=>window.onLVs();
+},100);
 </script>
 </body>
 </html>
