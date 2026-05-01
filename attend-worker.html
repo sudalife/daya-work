@@ -247,7 +247,7 @@ import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut
 import{getFirestore,doc,getDoc,setDoc,addDoc,updateDoc,deleteDoc,collection,query,where,getDocs,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 const FC={apiKey:"AIzaSyCf5gYx6FDwAIPibfMHevFh-AZZ3587AqE",authDomain:"daya-work.firebaseapp.com",projectId:"daya-work",storageBucket:"daya-work.firebasestorage.app",messagingSenderId:"1043513379329",appId:"1:1043513379329:web:e5178fa77a047cde9e8e00"};
 const app=initializeApp(FC);const auth=getAuth(app);const db=getFirestore(app);
-let CU=null,UD=null,todayRec=null,cSt='none',confCb=null,calMon=new Date(),gpsPos=null,autoDone=false,allAtt=[],allLv=[];
+let CU=null,UD=null,todayRec=null,cSt='none',confCb=null,calYear=new Date().getFullYear(),calMonth=new Date().getMonth(),gpsPos=null,autoDone=false,allAtt=[],allLv=[];
 let CS={lat:37.5665,lng:126.9780,radius:300,workStart:'09:00',lunchMin:60};
 const G=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,'0');
@@ -384,9 +384,9 @@ async function doCO(){
     cSt='done';setClockUI();hideL();toast('퇴근 완료 ✓','s');renderHome();
   }catch(e){hideL();toast('퇴근 오류: '+e.message,'e');}
 }
-window.chM=function(d){calMon.setMonth(calMon.getMonth()+d);renderCal();};
+window.chM=function(d){calMonth+=d;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCal();};
 function renderCal(){
-  const year=calMon.getFullYear(),month=calMon.getMonth(),ym=year+'-'+pad(month+1);
+  const year=calYear,month=calMonth,ym=year+'-'+pad(month+1);
   G('CMON').textContent=year+'년 '+(month+1)+'월';
   const aMap={};allAtt.forEach(r=>{if(r.date&&r.date.startsWith(ym))aMap[r.date]=r;});
   const lMap={};
@@ -458,7 +458,7 @@ window.submitFix=async function(){
   catch(e){hideL();toast('요청 오류: '+e.message,'e');}
 };
 window.goTab=function(name){['Home','Cal','Leave'].forEach(n=>{G('s'+n).classList.remove('active');G('t'+n).classList.remove('active');});G('s'+name).classList.add('active');G('t'+name).classList.add('active');if(name==='Cal')renderCal();if(name==='Leave')updateLeaveUI();};
-function showConf(icon,title,msg,cb){G('CICO').textContent=icon;G('CTIT').textContent=title;G('CMSG').textContent=msg;confCb=cb;G('CONFov').classList.add('open');}
+window.showConf=function showConf(icon,title,msg,cb){G('CICO').textContent=icon;G('CTIT').textContent=title;G('CMSG').textContent=msg;confCb=cb;G('CONFov').classList.add('open');}
 window.closeConf=()=>{confCb=null;G('CONFov').classList.remove('open');};
 window.doConf=()=>{closeConf();if(confCb)confCb();};
 let curTab='Home';const _gt=window.goTab;window.goTab=function(n){curTab=n;_gt(n);};

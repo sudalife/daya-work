@@ -22,11 +22,11 @@
   .sidebar-bottom{padding:16px 20px;border-top:1px solid var(--border);}
   .admin-badge{font-size:12px;color:var(--text2);margin-bottom:8px;}
   .btn-logout{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:8px;font-size:13px;font-family:inherit;cursor:pointer;}
-  .main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;}
+  .main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-width:0;overflow-x:hidden;}
   .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
   .topbar-title{font-size:18px;font-weight:900;}
   .topbar-date{font-size:13px;color:var(--text2);}
-  .content{padding:28px;flex:1;}
+  .content{padding:16px;flex:1;overflow-x:hidden;}
 
   #loginScreen{position:fixed;inset:0;background:linear-gradient(160deg,#0f1117,#1a2340);display:flex;align-items:center;justify-content:center;z-index:1000;}
   .login-box{background:var(--surface);border-radius:20px;padding:40px 36px;border:1px solid var(--border);width:360px;}
@@ -67,7 +67,7 @@
   .filter-bar{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;}
   .filter-select,.filter-input{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text);font-family:inherit;outline:none;}
   .filter-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
-  .table-wrap{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;overflow-x:auto;}
+  .table-wrap{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);overflow-x:auto;width:100%;}
   table{width:100%;border-collapse:collapse;font-size:13px;}
   thead{background:var(--surface2);}
   th{padding:12px 14px;text-align:left;font-size:12px;color:var(--text2);font-weight:700;white-space:nowrap;}
