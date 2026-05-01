@@ -442,13 +442,14 @@ window.hideSignup = function() {
 window.doSignup = async function() {
   const name  = document.getElementById('suName').value.trim();
   const rawId = document.getElementById('suEmail').value.trim().toLowerCase();
-  const email = rawId + '@daya.work'; // 내부 이메일 변환
+  const email = rawId + '@daya-work.com'; // 내부 이메일 변환
   const pw    = document.getElementById('suPw').value;
   const pw2   = document.getElementById('suPw2').value;
   const phone = document.getElementById('suPhone').value.trim();
   const team  = document.getElementById('suTeam').value;
   if (!name || !rawId || !pw) { showToast('필수 항목을 입력하세요', 'error'); return; }
-  if (!/^[a-z0-9가-힣]+$/.test(rawId)) { showToast('아이디는 영문/숫자/한글만 가능합니다', 'error'); return; }
+  if (rawId.length < 2) { showToast('아이디는 2자 이상 입력하세요', 'error'); return; }
+  if (!/^[a-z0-9A-Z가-힣]+$/.test(rawId)) { showToast('아이디는 영문/숫자/한글만 가능합니다', 'error'); return; }
   if (pw.length < 6) { showToast('비밀번호는 6자리 이상', 'error'); return; }
   if (pw !== pw2) { showToast('비밀번호가 일치하지 않습니다', 'error'); return; }
   showLoading('가입 처리 중...');
