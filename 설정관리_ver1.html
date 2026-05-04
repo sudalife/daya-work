@@ -387,7 +387,7 @@ async function saveAll(){
 
   // NAS에도 동시 저장
   try {
-    await fetch('https://daya-work.gumpmeling.workers.dev?action=save_config', {
+    await fetch('https://dayawork.gumpmelong.workers.dev?action=save_config', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({key:'sys_config', value:{...cfg, savedAt:Date.now()}})
     });
