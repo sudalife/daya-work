@@ -1435,6 +1435,29 @@ const FB_URL = (() => {
 })();
 let lastFirebaseHash = '';
 
+// ══ NAS MySQL 동기화 ══
+const NAS_URL = 'http://oys1979.ipdisk.co.kr:8000/api.php';
+
+function syncToNAS(key, value) {
+  try {
+    fetch(`${NAS_URL}?action=save_live`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({key, value})
+    }).catch(() => {});
+  } catch(e) {}
+}
+
+function syncHistoryToNAS(date, data) {
+  try {
+    fetch(`${NAS_URL}?action=save_history`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({date, data})
+    }).catch(() => {});
+  } catch(e) {}
+}
+
 function makeDataHash(live) {
   // timestamp 제외하고 해시 생성 (매번 달라지니까)
   const { timestamp, ...rest } = live;
@@ -1454,6 +1477,9 @@ function syncToFirebase(entry, forceSync) {
 
     fetch(`${FB_URL}/live.json`, {method:'PUT', body:JSON.stringify(live)}).catch(()=>{});
     fetch(`${FB_URL}/history/${dateKey}.json`, {method:'PUT', body:JSON.stringify(live)}).catch(()=>{});
+    // NAS 동시 저장
+    syncToNAS('live', live);
+    syncHistoryToNAS(dateKey, live);
   } catch(e){}
 }
 
@@ -2310,6 +2336,8 @@ function attSyncToFirebase() {
       offCount: ATT_MEMBERS.filter(n => todayAtt[n]?.status === 'off').length,
     };
     fetch(`${FB_URL}/attendance.json`, {method:'PUT', body:JSON.stringify(attPayload)}).catch(()=>{});
+    // NAS 동시 저장
+    syncToNAS('attendance', attPayload);
   } catch(e){}
 }
 
@@ -2660,6 +2688,8 @@ function orderSyncToFirebase() {
         sum + (orderData[co.id]?.rounds || []).reduce((a, b) => a + (b || 0), 0), 0),
     };
     fetch(`${FB_URL}/order.json`, {method:'PUT', body:JSON.stringify(payload)}).catch(()=>{});
+    // NAS 동시 저장
+    syncToNAS('order', payload);
   } catch(e) {}
 }
 
