@@ -598,6 +598,8 @@ function setOffline(msg) {
 }
 
 // ══ 실시간 데이터 가져오기 ══
+const NAS_URL = 'http://oys1979.ipdisk.co.kr:8000/api.php';
+
 async function fetchLive() {
   if (!FB_URL) {
     document.getElementById('offline-banner').classList.add('show');
@@ -609,18 +611,27 @@ async function fetchLive() {
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     if (!data) {
-      // 데이터 없어도 기존 캐시 유지 (화면 안 지움)
       setOffline('데이터 없음');
       return;
     }
-    cachedLiveData = data;  // 항상 최신 데이터 캐시
+    cachedLiveData = data;
     setOnline();
     renderLive(data);
     const now = new Date();
     document.getElementById('last-update').textContent = `최종 업데이트: ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
   } catch(e) {
-    setOffline('연결 실패');
-    console.error(e);
+    // Firebase 실패 시 NAS에서 가져오기
+    try {
+      const res2 = await fetch(`${NAS_URL}?action=get_live`);
+      const json2 = await res2.json();
+      if (json2.success && json2.data && json2.data.live) {
+        cachedLiveData = json2.data.live;
+        setOnline();
+        renderLive(json2.data.live);
+        const now = new Date();
+        document.getElementById('last-update').textContent = `NAS: ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+      } else { setOffline('연결 실패'); }
+    } catch(e2) { setOffline('연결 실패'); console.error(e2); }
   }
 }
 
@@ -743,7 +754,36 @@ async function fetchHistory() {
         <td style="color:var(--a5);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${hasNote ? d.note.slice(0,30)+(d.note.length>30?'…':'') : '<span style="color:var(--muted)">—</span>'}</td>
       </tr>`;
     }).join('');
-  } catch(e) { console.error('history error', e); }
+  } catch(e) {
+    // Firebase 실패 시 NAS에서 가져오기
+    try {
+      const today = new Date();
+      const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+      const res2 = await fetch(`${NAS_URL}?action=get_history&date=${todayKey}`);
+      const json2 = await res2.json();
+      if (json2.success && json2.data) {
+        const data = {[todayKey]: json2.data};
+        const entries = Object.entries(data).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,30);
+        const d = json2.data;
+        const jkg = d.종근당 || {};
+        const etc = d.기타업체 || {};
+        const othersTotal = (etc.국제||0)+(etc.삼천당||0)+(etc.비씨||0)+(etc.대우||0)+(etc.동구||0)+(etc.한진||0)+(etc.아주||0)+(etc.맥널티||0);
+        const hasNote = d.note && d.note.trim();
+        document.getElementById('history-tbody').innerHTML = `<tr>
+          <td><span class="badge badge-blue">${d.date || todayKey}</span></td>
+          <td><strong>${d.worker || '미선택'}</strong></td>
+          <td style="font-weight:900;color:var(--a1);">${d.totalQty ?? 0}</td>
+          <td style="color:var(--a6);font-weight:700;">${jkg.매핑 ?? 0}</td>
+          <td>${jkg.직배 ?? 0}</td>
+          <td>${jkg.도매상박스 ?? 0}</td>
+          <td>${jkg.용차박스 ?? 0}</td>
+          <td style="color:var(--a2);">${othersTotal}</td>
+          <td><span class="badge badge-pink">${d.plt ?? 0}P</span></td>
+          <td style="color:var(--a5);">${hasNote ? d.note.slice(0,30) : '<span style="color:var(--muted)">—</span>'}</td>
+        </tr>`;
+      }
+    } catch(e2) { console.error('NAS history error', e2); }
+  }
 }
 
 

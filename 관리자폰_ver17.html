@@ -681,6 +681,8 @@ function setOffline(msg) {
 }
 
 // ══ 실시간 데이터 ══
+const NAS_URL = 'http://oys1979.ipdisk.co.kr:8000/api.php';
+
 async function fetchLive() {
   if (!FB_URL) {
     document.getElementById('offline-banner').classList.add('show');
@@ -702,7 +704,22 @@ async function fetchLive() {
     const t = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
     setText('last-update', `업데이트: ${t}`);
     setText('last-update2', `업데이트: ${t}`);
-  } catch(e) { setOffline('연결 실패'); }
+  } catch(e) {
+    // Firebase 실패 시 NAS에서 데이터 가져오기
+    try {
+      const res2 = await fetch(`${NAS_URL}?action=get_live`);
+      const json2 = await res2.json();
+      if (json2.success && json2.data && json2.data.live) {
+        cachedLiveData = json2.data.live;
+        setOnline();
+        renderLive(json2.data.live);
+        const now = new Date();
+        const t = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+        setText('last-update', `NAS: ${t}`);
+        setText('last-update2', `NAS: ${t}`);
+      } else { setOffline('연결 실패'); }
+    } catch(e2) { setOffline('연결 실패'); }
+  }
 }
 
 function renderLive(d) {
@@ -789,7 +806,20 @@ async function fetchHistory() {
     currentHistoryData = d;
     currentHistoryKey = todayKey;
     renderHistoryCard(todayKey, d);
-  } catch(e) {}
+  } catch(e) {
+    // Firebase 실패 시 NAS에서 가져오기
+    try {
+      const today = new Date();
+      const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+      const res2 = await fetch(`${NAS_URL}?action=get_history&date=${todayKey}`);
+      const json2 = await res2.json();
+      if (json2.success && json2.data) {
+        currentHistoryData = json2.data;
+        currentHistoryKey = todayKey;
+        renderHistoryCard(todayKey, json2.data);
+      }
+    } catch(e2) {}
+  }
 }
 
 function renderHistoryCard(dateKey, d) {

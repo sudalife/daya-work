@@ -385,17 +385,25 @@ async function saveAll(){
   localStorage.setItem('sys_fb_url',cfg.firebaseUrl);
   showBanner('⏳ Firebase에 저장 중...',false);
 
+  // NAS에도 동시 저장
+  try {
+    await fetch('http://oys1979.ipdisk.co.kr:8000/api.php?action=save_config', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({key:'sys_config', value:{...cfg, savedAt:Date.now()}})
+    });
+  } catch(e) {}
+
   if(cfg.firebaseUrl){
     try{
-      const res=await fetch(`${cfg.firebaseUrl.replace(/\/+$/,'')}/config.json`,{
+      const res=await fetch(`${cfg.firebaseUrl.replace(/\/+$,'')}/config.json`,{
         method:'PUT',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({...cfg,savedAt:Date.now()})
       });
-      if(res.ok){showBanner('✅ 저장 완료! 작업자앱에 즉시 반영됩니다.',false);showToast('✅ 저장 완료');}
-      else showBanner('⚠️ 로컬 저장됨 (Firebase 오류 '+res.status+')',true);
-    }catch{showBanner('⚠️ 로컬 저장됨 (Firebase 연결 실패)',true);}
+      if(res.ok){showBanner('✅ 저장 완료! (Firebase+NAS)',false);showToast('✅ 저장 완료');}
+      else showBanner('⚠️ 로컬+NAS 저장됨 (Firebase 오류 '+res.status+')',true);
+    }catch{showBanner('⚠️ 로컬+NAS 저장됨 (Firebase 연결 실패)',true);}
   }else{
-    showBanner('💾 로컬 저장 완료 (Firebase URL 없음)',false);showToast('💾 로컬 저장 완료');
+    showBanner('💾 로컬+NAS 저장 완료',false);showToast('💾 로컬+NAS 저장 완료');
   }
   renderAll();
 }
