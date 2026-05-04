@@ -387,7 +387,7 @@ async function saveAll(){
 
   // NAS에도 동시 저장
   try {
-    await fetch('http://oys1979.ipdisk.co.kr:8000/api.php?action=save_config', {
+    await fetch('https://daya-work.gumpmeling.workers.dev?action=save_config', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({key:'sys_config', value:{...cfg, savedAt:Date.now()}})
     });
