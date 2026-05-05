@@ -506,12 +506,13 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
     </div>
   </button>
   <button class="tab-btn" onclick="switchTab(3)" id="tab3">
-    <div class="tab-icon">📋</div>
-    <div class="tab-label">출근부</div>
+    <div class="tab-icon">🚛</div>
+    <div class="tab-label">직배현황</div>
+    <div class="tab-badge" id="badge3">0</div>
   </button>
   <button class="tab-btn" onclick="switchTab(4)" id="tab4">
-    <div class="tab-icon">📦</div>
-    <div class="tab-label">주문량</div>
+    <div class="tab-icon">⚙️</div>
+    <div class="tab-label">설정</div>
   </button>
 </nav>
 
@@ -570,6 +571,23 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
     </div>
   </div>
 
+  <!-- 가산연합의원 -->
+  <div class="gwangyo-card" style="border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.06);margin-top:8px;">
+    <div style="flex:1">
+      <div class="gwangyo-name" style="color:#34d399;">🏥 가산연합의원</div>
+      <div class="gwangyo-sub">전체수량 포함</div>
+    </div>
+    <div class="gwangyo-iw">
+      <input type="number" inputmode="numeric" placeholder="0" data-group="gs" data-key="가산연합의원">
+    </div>
+  </div>
+
+  <!-- 가산 요약 표시 -->
+  <div class="gwangyo-card" style="border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.06);margin-top:4px;">
+    <div style="flex:1"><div class="gwangyo-name" style="color:#34d399;">🏥 가산연합의원</div><div class="gwangyo-sub">전체수량 포함</div></div>
+    <div style="font-size:22px;font-weight:900;color:#34d399;" id="gs-total">0</div>
+  </div>
+
   <!-- 개별운송 -->
   <div class="gwangyo-card" style="border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.06);margin-top:8px;">
     <div style="flex:1">
@@ -581,24 +599,9 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
     </div>
   </div>
 
-  <!-- 보고서 + 저장 버튼 -->
+  <!-- 빠른 저장 버튼만 유지 -->
   <div class="btn-wrap" style="padding-top:12px;">
-    <button class="btn btn-reset" onclick="resetAll()">🔄 초기화</button>
     <button class="btn btn-save-main" onclick="saveData()">💾 저장</button>
-    <button class="btn btn-report" onclick="openReport()">📋 보고서</button>
-  </div>
-
-  <!-- 저장 목록 -->
-  <div class="save-sec">
-    <div class="sec-hdr">
-      <div class="dot" style="background:var(--a5)"></div>
-      <div class="sec-title">💾 저장 목록</div>
-    </div>
-    <div class="save-input-row">
-      <input class="save-name-input" type="text" id="save-name" placeholder="저장 이름 (예: 4/19 월)" maxlength="18">
-      <button class="btn-save-now" onclick="saveData()">저장</button>
-    </div>
-    <div id="slots-list"><div class="no-saves">저장된 데이터가 없습니다</div></div>
   </div>
 
 </div></div><!-- /page0 요약 -->
@@ -616,36 +619,7 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
     <div class="jkg-grid" id="jkg-grid"></div>
   </div>
 
-  <!-- 직배 -->
-  <div class="sec">
-    <div class="sec-hdr">
-      <div class="dot" style="background:#f472b6"></div>
-      <div class="sec-title">직배</div>
-      <div class="sec-note">종근당 수량 포함</div>
-      <div class="sec-total" style="color:#f472b6" id="jb-sec">0</div>
-    </div>
-    <div id="jb-list"></div>
-  </div>
 
-  <!-- 도매상 + 용차 나란히 -->
-  <div class="pair-wrap">
-    <div class="sec no-margin">
-      <div class="sec-hdr">
-        <div class="dot" style="background:var(--a2)"></div>
-        <div class="sec-title">도매상</div>
-        <div class="sec-total" style="color:var(--a2)" id="dms-sec">0</div>
-      </div>
-      <div id="dms-list"></div>
-    </div>
-    <div class="sec no-margin">
-      <div class="sec-hdr">
-        <div class="dot" style="background:var(--a4)"></div>
-        <div class="sec-title">용차</div>
-        <div class="sec-total" style="color:var(--a4)" id="yc-sec">0</div>
-      </div>
-      <div id="yc-list"></div>
-    </div>
-  </div>
 
   <!-- 특이사항 -->
   <div class="note-sec">
@@ -732,63 +706,73 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
 </div></div><!-- /page1 -->
 
 
-<!-- ══ 페이지 3: 출근부 ══ -->
+<!-- ══ 페이지 3: 직배현황 ══ -->
 <div class="page" id="page3">
-<div class="page-inner att-page">
+<div class="page-inner">
 
-  <div class="att-header-att">
-    <div class="att-header-top">
-      <div class="att-team-badge" id="att-team-badge">🧊 다야냉장팀</div>
-      <div class="att-today-date" id="att-today-label">—</div>
+  <!-- 직배 -->
+  <div class="sec" style="margin-top:9px;">
+    <div class="sec-hdr">
+      <div class="dot" style="background:#f472b6"></div>
+      <div class="sec-title">직배</div>
+      <div class="sec-note">종근당 수량 포함</div>
+      <div class="sec-total" style="color:#f472b6" id="jb-sec">0</div>
     </div>
-    <div class="att-month-nav">
-      <button class="att-month-btn" onclick="attChangeMonth(-1)">‹</button>
-      <div class="att-month-label" id="att-month-label">—</div>
-      <button class="att-month-btn" onclick="attChangeMonth(1)">›</button>
+    <div id="jb-list"></div>
+  </div>
+
+  <!-- 도매상 + 용차 나란히 -->
+  <div class="pair-wrap">
+    <div class="sec no-margin">
+      <div class="sec-hdr">
+        <div class="dot" style="background:var(--a2)"></div>
+        <div class="sec-title">도매상</div>
+        <div class="sec-total" style="color:var(--a2)" id="dms-sec">0</div>
+      </div>
+      <div id="dms-list"></div>
+    </div>
+    <div class="sec no-margin">
+      <div class="sec-hdr">
+        <div class="dot" style="background:var(--a4)"></div>
+        <div class="sec-title">용차</div>
+        <div class="sec-total" style="color:var(--a4)" id="yc-sec">0</div>
+      </div>
+      <div id="yc-list"></div>
     </div>
   </div>
 
-  <!-- 출근부 저장 버튼 -->
-  <div style="padding:0 10px 8px;display:flex;gap:8px;align-items:center;">
-    <button onclick="attSaveManual()" style="flex:1;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;">
-      💾 출근부 저장
-    </button>
-    <div id="att-save-status" style="font-size:11px;color:var(--muted);min-width:80px;text-align:right;"></div>
-  </div>
-
-  <div class="att-day-panel" id="att-day-panel"></div>
-
-  <div class="att-stats-section">
-    <div class="att-section-title">📊 월별 통계</div>
-    <div class="att-stats-grid" id="att-stats-grid"></div>
-  </div>
-
-  <div class="att-cal-section">
-    <div class="att-section-title">📅 이번 달 달력</div>
-    <div class="att-calendar" id="att-calendar"></div>
-  </div>
-
-</div></div><!-- /page3 출근부 -->
+</div></div><!-- /page3 직배현황 -->
 
 
-<!-- ══ 페이지 4: 주문량 ══ -->
+<!-- ══ 페이지 4: 설정 ══ -->
 <div class="page" id="page4">
 <div class="page-inner">
-  <div style="padding:0 0 4px;">
-    <div class="order-summary-bar">
-      <div>
-        <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px;">📦 전체 주문 합계</div>
-        <div class="order-summary-total" id="order-grand-total">0</div>
-      </div>
-      <div style="text-align:right;">
-        <button class="order-save-btn" style="width:auto;padding:9px 18px;margin-bottom:0;" onclick="orderSave()">💾 저장</button>
-      </div>
+
+  <!-- 버튼 그룹 -->
+  <div style="margin-top:16px;padding:0 4px;">
+    <div style="font-size:11px;font-weight:800;color:#64748b;letter-spacing:.8px;margin-bottom:12px;">⚙️ 작업 관리</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-save-main" onclick="saveData()" style="width:100%;padding:14px;font-size:15px;">💾 저장</button>
+      <button class="btn btn-report" onclick="openReport()" style="width:100%;padding:14px;font-size:15px;">📋 보고서</button>
+      <button class="btn btn-reset" onclick="resetAll()" style="width:100%;padding:14px;font-size:15px;">🔄 초기화</button>
     </div>
-    <div class="order-save-status" id="order-save-status"></div>
   </div>
-  <div id="order-company-list"></div>
-</div>
-</div><!-- /page4 주문량 -->
+
+  <!-- 저장 목록 -->
+  <!-- 저장 목록 -->
+  <div class="save-sec">
+    <div class="sec-hdr">
+      <div class="dot" style="background:var(--a5)"></div>
+      <div class="sec-title">💾 저장 목록</div>
+    </div>
+    <div class="save-input-row">
+      <input class="save-name-input" type="text" id="save-name" placeholder="저장 이름 (예: 4/19 월)" maxlength="18">
+      <button class="btn-save-now" onclick="saveData()">저장</button>
+    </div>
+    <div id="slots-list"><div class="no-saves">저장된 데이터가 없습니다</div></div>
+  </div>
+
+</div></div><!-- /page4 설정 -->
 
 </div></div><!-- /slider, outer -->
 
@@ -821,8 +805,8 @@ function switchTab(i) {
   document.querySelectorAll('.tab-btn').forEach((b,j) => b.classList.toggle('active', j===i));
   window.scrollTo({top:0,behavior:'instant'});
   if (i === 1) showNoticeIfNeeded();
-  if (i === 3) { setTimeout(() => attRenderDay(), 50); }
-  if (i === 4) { setTimeout(() => orderRenderPage(), 50); }
+  if (i === 3) { /* 직배현황 탭 */ }
+  if (i === 4) { renderSaveList(); }
   // 요약탭(0)에서 다른 탭으로 이동할 때 첫 빈 입력칸으로 포커스
   if (prevTab === 0 && i !== 0) {
     setTimeout(() => {
@@ -843,9 +827,10 @@ function switchTab(i) {
 
 // ══ 업체 카드 클릭 → 해당 탭 + 첫 빈 칸으로 이동 ══
 function goToInput(grp) {
-  // 탭 결정 - 도매상/용차/직배는 종근당 탭(1)
-  const jkgGrps = ['jkg', 'dms', 'yc', 'jb'];
-  const targetTab = jkgGrps.includes(grp) ? 1 : 2;
+  // 탭 결정 - 도매상/용차/직배는 직배현황 탭(3)
+  const jkgGrps = ['jkg'];
+  const jbGrps = ['dms', 'yc', 'jb'];
+  const targetTab = jkgGrps.includes(grp) ? 1 : jbGrps.includes(grp) ? 3 : 2;
   switchTab(targetTab);
 
   setTimeout(() => {
@@ -1237,7 +1222,7 @@ function sumGrp(g) { let s=0; document.querySelectorAll(`[data-group="${g}"]`).f
 function st(id,v) { const el=document.getElementById(id); if(el) el.textContent=v; }
 
 function recalc() {
-  const jkg=sumGrp('jkg'), jb=sumGrp('jb'), dms=sumGrp('dms'), yc=sumGrp('yc'), gw=sumGrp('gw'), gb=sumGrp('gb');
+  const jkg=sumGrp('jkg'), jb=sumGrp('jb'), dms=sumGrp('dms'), yc=sumGrp('yc'), gw=sumGrp('gw'), gs=sumGrp('gs'), gb=sumGrp('gb');
   const dmsBox=sumGrp('dms_box'), ycBox=sumGrp('yc_box');
   const gjBig=sumGrp('gj_big'), gjSmall=sumGrp('gj_small'), gj=gjBig+gjSmall;
   const scd=sumGrp('scd'), dw=sumGrp('dw'), dg=sumGrp('dg');
@@ -1247,7 +1232,7 @@ function recalc() {
   const jkgDisp = jkg + jb + dms + yc;
   const others = gj + scd + dw + dg + bc + aj + mn + hj;
   // 전체수량 = 종근당(직배제외) + 기타업체 + 직배 + 도매상박스수 + 용차박스수 + 광교 + 개별운송
-  const totalAll = jkg + others + jb + dmsBox + ycBox + gw + gb;
+  const totalAll = jkg + others + jb + dmsBox + ycBox + gw + gs + gb;
 
   // ══ 파렛트 계산 ══
   // 규칙:
@@ -1319,7 +1304,7 @@ function recalc() {
 
   st('total-all',totalAll); st('plt-count',plt);
   st('jkg-total',jkgDisp); st('jkg-sec',jkg); st('jb-sec',jb);
-  st('dms-sec',dms); st('yc-sec',yc); st('gw-total',gw); st('gb-total',gb);
+  st('dms-sec',dms); st('yc-sec',yc); st('gw-total',gw); st('gs-total',gs); st('gb-total',gb);
   st('dms-box-total',dmsBox); st('yc-box-total',ycBox);
   st('jb-sum-total',jb); st('jb-sec',jb);
   st('gj-total',gj); st('gj-sec',gj);
@@ -1502,8 +1487,9 @@ function buildLiveData(entry) {
   const mn=get('mn',1)+get('mn',2)+get('mn',3);
   let hj=0; document.querySelectorAll('[data-group="hj"]').forEach(el=>{hj+=parseInt(el.value)||0;});
   const gw=parseInt(document.querySelector('[data-group="gw"]')?.value)||0;
+  const gs=parseInt(document.querySelector('[data-group="gs"]')?.value)||0;
   const gb=parseInt(document.querySelector('[data-group="gb"]')?.value)||0;
-  const totalQty=jkg+gj+scd+bc+dw+dg+hj+aj+mn+jb+dmsBox+ycBox+gw+gb;
+  const totalQty=jkg+gj+scd+bc+dw+dg+hj+aj+mn+jb+dmsBox+ycBox+gw+gs+gb;
   const plt=parseInt(document.getElementById('plt-count')?.textContent)||0;
   const now=new Date();
   const DAYS_KO=['일','월','화','수','목','금','토'];
@@ -1515,7 +1501,7 @@ function buildLiveData(entry) {
     totalQty, plt,
     종근당:{매핑:jkg, 직배:jb, 도매상:dms, 도매상박스:dmsBox, 용차:yc, 용차박스:ycBox},
     기타업체:{국제:gj, 삼천당:scd, 비씨:bc, 대우:dw, 동구:dg, 한진:hj, 아주:aj, 맥널티:mn},
-    추가:{광교:gw, 개별운송:gb},
+    추가:{광교:gw, 가산연합의원:gs, 개별운송:gb},
     직배상세: (() => {
       const rows = [];
       const JB_NAMES_LOCAL = ['종로팔팔','종로카톨릭','종로365의원','종로5가미래','동탄아이엠유','강서아이엠유','필모어','크리스트','당산수','수원더셀','서울뷰세종','가산연합'];
@@ -1610,10 +1596,11 @@ function openReport(){
   const scd=sumGrp('scd'), dw=sumGrp('dw'), dg=sumGrp('dg');
   const bc=sumGrp('bc'), aj=sumGrp('aj'), mn=sumGrp('mn'), hj=sumGrp('hj');
   const gw = parseInt(document.querySelector('[data-group="gw"]')?.value)||0;
+  const gs = parseInt(document.querySelector('[data-group="gs"]')?.value)||0;
   const gb = parseInt(document.querySelector('[data-group="gb"]')?.value)||0;
   const jkgQty = jkg + jb + dms + yc; // 종근당+직배+매핑수
   const othersQty = gj + scd + dw + dg + bc + aj + mn + hj;
-  const totalQty = jkg + othersQty + jb + dmsBox + ycBox + gw + gb;
+  const totalQty = jkg + othersQty + jb + dmsBox + ycBox + gw + gs + gb;
 
   // ── 파렛트 계산 (recalc와 동일 로직) ──
   let rptUniquePlt=0, rptJkgUniquePlt=0;
@@ -1713,6 +1700,7 @@ function openReport(){
     if(val>0) etcRows.push({name:'한진-'+inp.dataset.key,val});
   });
   if(gw>0) etcRows.push({name:'광교센트럴',val:gw});
+  if(gs>0) etcRows.push({name:'가산연합의원',val:gs});
   if(gb>0) etcRows.push({name:'개별운송',val:gb});
   const noteText=document.getElementById('note-textarea')?.value?.trim()||'';
 
@@ -1901,6 +1889,7 @@ function openReport(){
         ${dmsBox>0?`<div class="rpt-sub-card accent-yellow"><div class="rpt-sub-name">📦 도매상 박스</div><div class="rpt-sub-val">${dmsBox}</div></div>`:''}
         ${ycBox>0?`<div class="rpt-sub-card accent-cyan"><div class="rpt-sub-name">🚚 용차 박스</div><div class="rpt-sub-val">${ycBox}</div></div>`:''}
         ${gw>0?`<div class="rpt-sub-card accent-green"><div class="rpt-sub-name">⭐ 광교센트럴</div><div class="rpt-sub-val">${gw}</div></div>`:''}
+        ${gs>0?`<div class="rpt-sub-card accent-green"><div class="rpt-sub-name">🏥 가산연합의원</div><div class="rpt-sub-val">${gs}</div></div>`:''}
         ${gb>0?`<div class="rpt-sub-card accent-purple"><div class="rpt-sub-name">🚗 개별운송</div><div class="rpt-sub-val">${gb}</div></div>`:''}
       </div>
     </div>
