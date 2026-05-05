@@ -560,6 +560,17 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
     <div class="sum-card clickable" style="background:rgba(244,114,182,.08);border:1px solid rgba(244,114,182,.25);" onclick="goToInput('jb')"><div class="sum-label" style="color:#f472b6;">📋 직배<br>수량</div><div class="sum-val" style="color:#f472b6;" id="jb-sum-total">0</div></div>
   </div>
 
+  <!-- 특이사항 -->
+  <div class="note-sec">
+    <div class="note-hdr">
+      <div class="dot" style="background:var(--a5)"></div>
+      <div class="sec-title">특이사항</div>
+      <div class="sec-note" style="margin-left:4px;">진입 시 팝업</div>
+    </div>
+    <textarea class="note-textarea" id="note-textarea" maxlength="100" placeholder="특이사항을 입력하세요 (최대 100자)"></textarea>
+    <div class="note-charcount"><span id="note-count">0</span>/100</div>
+  </div>
+
   <!-- 광교센트럴 -->
   <div class="gwangyo-card">
     <div style="flex:1">
@@ -577,16 +588,14 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
       <div class="gwangyo-name" style="color:#34d399;">🏥 가산연합의원</div>
       <div class="gwangyo-sub">전체수량 포함</div>
     </div>
-    <div class="gwangyo-iw">
-      <input type="number" inputmode="numeric" placeholder="0" data-group="gs" data-key="가산연합의원">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="font-size:20px;font-weight:900;color:#34d399;min-width:28px;text-align:right;" id="gs-total">0</div>
+      <div class="gwangyo-iw">
+        <input type="number" inputmode="numeric" placeholder="0" data-group="gs" data-key="가산연합의원">
+      </div>
     </div>
   </div>
 
-  <!-- 가산 요약 표시 -->
-  <div class="gwangyo-card" style="border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.06);margin-top:4px;">
-    <div style="flex:1"><div class="gwangyo-name" style="color:#34d399;">🏥 가산연합의원</div><div class="gwangyo-sub">전체수량 포함</div></div>
-    <div style="font-size:22px;font-weight:900;color:#34d399;" id="gs-total">0</div>
-  </div>
 
   <!-- 개별운송 -->
   <div class="gwangyo-card" style="border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.06);margin-top:8px;">
@@ -620,17 +629,6 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
   </div>
 
 
-
-  <!-- 특이사항 -->
-  <div class="note-sec">
-    <div class="note-hdr">
-      <div class="dot" style="background:var(--a5)"></div>
-      <div class="sec-title">특이사항</div>
-      <div class="sec-note" style="margin-left:4px;">진입 시 팝업</div>
-    </div>
-    <textarea class="note-textarea" id="note-textarea" maxlength="100" placeholder="특이사항을 입력하세요 (최대 100자)"></textarea>
-    <div class="note-charcount"><span id="note-count">0</span>/100</div>
-  </div>
 
 
 </div></div><!-- /page1 종근당 -->
