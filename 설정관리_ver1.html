@@ -399,7 +399,7 @@ async function saveAll(){
 
   if(cfg.firebaseUrl){
     try{
-      const res=await fetch(`${cfg.firebaseUrl.replace(/\/+$,'')}/config.json`,{
+      const res=await fetch(`${cfg.firebaseUrl.replace(/\/+$/,'')}/config.json`,{
         method:'PUT',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({...cfg,savedAt:Date.now()})
       });
