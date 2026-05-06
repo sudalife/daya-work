@@ -1500,6 +1500,7 @@ function buildLiveData(entry) {
     종근당:{매핑:jkg, 직배:jb, 도매상:dms, 도매상박스:dmsBox, 용차:yc, 용차박스:ycBox},
     기타업체:{국제:gj, 삼천당:scd, 비씨:bc, 대우:dw, 동구:dg, 한진:hj, 아주:aj, 맥널티:mn},
     추가:{광교:gw, 가산연합의원:gs, 개별운송:gb},
+    raw: entry.data,
     직배상세: (() => {
       const rows = [];
       const JB_NAMES_LOCAL = ['종로팔팔','종로카톨릭','종로365의원','종로5가미래','동탄아이엠유','강서아이엠유','필모어','크리스트','당산수','수원더셀','서울뷰세종','가산연합'];
@@ -2061,9 +2062,27 @@ if (window.speechSynthesis) {
   window.speechSynthesis.onvoiceschanged = () => {};
 }
 
-restoreCur(); restoreColors(); renderSlots();
-lastData=JSON.stringify(collectData());
-showNoticeIfNeeded();
+// 앱 시작 시 Firebase → 로컬 순으로 데이터 복원
+(async function initLoad() {
+  try {
+    const today = new Date();
+    const dateKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    const res = await fetch(`${FB_URL}history/${dateKey}.json?t=${Date.now()}`);
+    const fbData = await res.json();
+    if (fbData && fbData.raw) {
+      // Firebase에 오늘 데이터 있으면 적용
+      applyData(fbData.raw);
+      saveCur();
+    } else {
+      restoreCur();
+    }
+  } catch(e) {
+    restoreCur();
+  }
+  restoreColors(); renderSlots();
+  lastData = JSON.stringify(collectData());
+  showNoticeIfNeeded();
+})();
 
 // 헤더에 오늘 날짜 자동 표시
 const DAYS_KO = ['일','월','화','수','목','금','토'];
