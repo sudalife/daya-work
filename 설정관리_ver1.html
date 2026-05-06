@@ -223,6 +223,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR','App
     <div class="cbody">
       <span class="lbl">광교 항목 이름</span>
       <input class="inp" id="ext-gw" placeholder="광교센트럴가정의학과">
+      <span class="lbl">가산연합의원 항목 이름</span>
+      <input class="inp" id="ext-gs" placeholder="가산연합의원">
       <span class="lbl">개별운송 항목 이름</span>
       <input class="inp" id="ext-gb" placeholder="개별운송">
     </div>
@@ -256,7 +258,7 @@ const DEF = {
     {name:'맥널티',type:'simple',color:8,rows:3},
   ],
   hjList:['국제','삼천당','비씨','대우','아주','동구','맥널티'],
-  extraGw:'광교센트럴가정의학과', extraGb:'개별운송',
+  extraGw:'광교센트럴가정의학과', extraGs:'가산연합의원', extraGb:'개별운송',
 };
 const CV=['#e91e8c','#f97316','#06b6d4','#84cc16','#ffd600','#a78bfa','#ef4444','#e2e8f0','#3b82f6'];
 const CN=['핑크','주황','하늘','연두','노랑','보라','빨강','흰색','파랑'];
@@ -283,6 +285,7 @@ function renderAll(){
   document.getElementById('dms-n').value=cfg.dmsRows||3;
   document.getElementById('yc-n').value=cfg.ycRows||3;
   document.getElementById('ext-gw').value=cfg.extraGw||'';
+  document.getElementById('ext-gs').value=cfg.extraGs||'';
   document.getElementById('ext-gb').value=cfg.extraGb||'';
   rW();rBiz();rHj();rJb();
   updFdot();
@@ -375,6 +378,7 @@ async function saveAll(){
   cfg.dmsRows=parseInt(document.getElementById('dms-n').value)||3;
   cfg.ycRows=parseInt(document.getElementById('yc-n').value)||3;
   cfg.extraGw=document.getElementById('ext-gw').value.trim();
+  cfg.extraGs=document.getElementById('ext-gs').value.trim();
   cfg.extraGb=document.getElementById('ext-gb').value.trim();
   cfg.workers=(cfg.workers||[]).filter(w=>w.trim());
   cfg.jbList=(cfg.jbList||[]).filter(j=>j.trim());
