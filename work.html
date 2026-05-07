@@ -107,6 +107,10 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
 .jkg-row.colored-7 .jkg-num{background:#e2e8f0;color:#000;}
 .jkg-row.colored-8{background:rgba(59,130,246,.22);}
 .jkg-row.colored-8 .jkg-num{background:#3b82f6;color:#fff;}
+.jkg-row.colored-10{background:rgba(180,83,9,.22);}
+.jkg-row.colored-10 .jkg-num{background:#b45309;color:#fff;}
+.jkg-row.colored-11{background:rgba(22,163,74,.22);}
+.jkg-row.colored-11 .jkg-num{background:#16a34a;color:#fff;}
 .jkg-row[class*="colored-"] input{color:#fff!important;border-color:transparent!important;background:rgba(0,0,0,.3)!important;}
 .jkg-row.colored-7 input{color:#000!important;}
 
@@ -143,6 +147,10 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
 .direct-row.colored-7 .direct-name{color:#e2e8f0;}
 .direct-row.colored-8{background:rgba(59,130,246,.22);}
 .direct-row.colored-8 .direct-name{color:#93c5fd;}
+.direct-row.colored-10{background:rgba(180,83,9,.22);}
+.direct-row.colored-10 .direct-name{color:#fcd34d;}
+.direct-row.colored-11{background:rgba(22,163,74,.22);}
+.direct-row.colored-11 .direct-name{color:#86efac;}
 .direct-row[class*="colored-"] input{color:#fff!important;border-color:transparent!important;background:rgba(0,0,0,.35)!important;}
 .direct-row.colored-7 input{color:#000!important;}
 
@@ -193,6 +201,10 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
 .hj-row.colored-7 .hj-name{background:#e2e8f0;color:#000;}
 .hj-row.colored-8{background:rgba(59,130,246,.22);}
 .hj-row.colored-8 .hj-name{background:#3b82f6;color:#fff;}
+.hj-row.colored-10{background:rgba(180,83,9,.22);}
+.hj-row.colored-10 .hj-name{background:#b45309;color:#fff;}
+.hj-row.colored-11{background:rgba(22,163,74,.22);}
+.hj-row.colored-11 .hj-name{background:#16a34a;color:#fff;}
 .hj-row[class*="colored-"] input{color:#fff!important;border-color:transparent!important;background:rgba(0,0,0,.35)!important;}
 
 /* ── 특이사항 ── */
@@ -316,6 +328,8 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
 .cc7{background:#e2e8f0;color:#000;}
 .cc8{background:#3b82f6;color:#fff;}
 .cc9{background:var(--c1);color:#fff;}
+.cc10{background:#b45309;color:#fff;}
+.cc11{background:#16a34a;color:#fff;}
 .color-clear{width:100%;padding:9px;background:rgba(255,100,100,.12);border:1px solid rgba(255,100,100,.3);border-radius:10px;color:#ff6b6b;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;}
 .color-cancel{width:100%;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 
@@ -430,16 +444,22 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
 <div class="color-overlay" id="colorOverlay" onclick="closeColorPicker()">
   <div class="color-popup" onclick="event.stopPropagation()">
     <div class="color-popup-title" id="cpTitle">색상 선택</div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:6px;">── 업체 전용 ──</div>
     <div class="color-choices">
       <div class="color-choice cc1" onclick="applyColor(1)">🟠주황<br><span style="font-size:9px;opacity:.8;">국제</span></div>
       <div class="color-choice cc2" onclick="applyColor(2)">🔵하늘<br><span style="font-size:9px;opacity:.8;">삼천당</span></div>
       <div class="color-choice cc3" onclick="applyColor(3)">🟢연두<br><span style="font-size:9px;opacity:.8;">비씨</span></div>
       <div class="color-choice cc4" onclick="applyColor(4)">🟡노랑<br><span style="font-size:9px;opacity:.8;">대우</span></div>
       <div class="color-choice cc5" onclick="applyColor(5)">🟣보라<br><span style="font-size:9px;opacity:.8;">동구</span></div>
-      <div class="color-choice cc6" onclick="applyColor(6)">🔴빨강<br><span style="font-size:9px;opacity:.8;">혼합용</span></div>
       <div class="color-choice cc7" onclick="applyColor(7)">⬜흰색<br><span style="font-size:9px;opacity:.8;">아주</span></div>
       <div class="color-choice cc8" onclick="applyColor(8)">🔷파랑<br><span style="font-size:9px;opacity:.8;">맥널티</span></div>
       <div class="color-choice cc9" onclick="applyColor(-1)">🩷핑크<br><span style="font-size:9px;opacity:.8;">종근당</span></div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;margin:8px 0 6px;">── 혼합용 ──</div>
+    <div class="color-choices">
+      <div class="color-choice cc6" onclick="applyColor(6)">🔴빨강<br><span style="font-size:9px;opacity:.8;">혼합1</span></div>
+      <div class="color-choice cc10" onclick="applyColor(10)">🟤갈색<br><span style="font-size:9px;opacity:.8;">혼합2</span></div>
+      <div class="color-choice cc11" onclick="applyColor(11)">💚초록<br><span style="font-size:9px;opacity:.8;">혼합3</span></div>
     </div>
     <button class="color-clear" onclick="applyColor(0)">🗑️ 색 지우기</button>
     <button class="color-cancel" onclick="closeColorPicker()">취소</button>
@@ -969,7 +989,7 @@ function rowType(r) {
   return 'direct';
 }
 function applyRowColor(r, ci, type) {
-  const allCls = ['colored','colored-1','colored-2','colored-3','colored-4','colored-5','colored-6','colored-7','colored-8'];
+  const allCls = ['colored','colored-1','colored-2','colored-3','colored-4','colored-5','colored-6','colored-7','colored-8','colored-10','colored-11'];
   r.classList.remove(...allCls);
   if (ci === 0) return;
   if (type === 'jkg') {
@@ -1113,7 +1133,7 @@ function buildSimple(cid, grp) {
 
 // 국제 (큰거+작은거 각각 독립 색칠)
 const gjList = document.getElementById('gj-list');
-for (let i = 1; i <= 5; i++) {
+for (let i = 1; i <= 7; i++) {
   const r = document.createElement('div'); r.className = 'gj-row'; r.id = 'gj-'+i;
   r.innerHTML = `<div class="gj-num" id="gjn-${i}">${i}</div><div class="gj-pair"><span class="gj-sub" id="gjsub-big-${i}">큰거</span><div class="gj-iw" id="gjiw-big-${i}"><input type="number" inputmode="numeric" placeholder="0" data-group="gj_big" data-key="${i}"></div><span class="gj-sub" id="gjsub-small-${i}">작은거</span><div class="gj-iw" id="gjiw-small-${i}"><input type="number" inputmode="numeric" placeholder="0" data-group="gj_small" data-key="${i}"></div></div>`;
 
@@ -1168,12 +1188,12 @@ function buildColored(cid, grp, keys) {
     c.appendChild(r);
   });
 }
-buildColored('scd-list','scd',[1,2,3]);
-buildColored('dw-list','dw',[1,2,3]);
-buildColored('dg-list','dg',[1,2,3]);
-buildColored('aj-list','aj',[1,2,3]);
-buildColored('bc-list','bc',[1,2,3]);
-buildColored('mn-list','mn',[1,2,3]);
+buildColored('scd-list','scd',[1,2,3,4,5]);
+buildColored('dw-list','dw',[1,2,3,4,5]);
+buildColored('dg-list','dg',[1,2,3,4,5]);
+buildColored('aj-list','aj',[1,2,3,4,5]);
+buildColored('bc-list','bc',[1,2,3,4,5]);
+buildColored('mn-list','mn',[1,2,3,4,5]);
 
 // 한진 2열
 // 한진 2열 - 색칠 없이 숫자만 (전체 1파렛트)
@@ -1257,7 +1277,7 @@ function recalc() {
   // 큰거/작은거 중 고유색(1=주황)이면 그 행은 독립 파렛트
   // 비고유색이면 혼합 그룹
   let gjUniquePlt = 0;
-  for (let i=1;i<=5;i++) {
+  for (let i=1;i<=7;i++) {
     const bCi=colorMap['gj_big:'+i], sCi=colorMap['gj_small:'+i];
     const bEl=document.querySelector(`[data-group="gj_big"][data-key="${i}"]`);
     const sEl=document.querySelector(`[data-group="gj_small"][data-key="${i}"]`);
@@ -1475,7 +1495,7 @@ function buildLiveData(entry) {
   const yc=get('yc',1)+get('yc',2)+get('yc',3);
   const dmsBox=get('dms_box',1)+get('dms_box',2)+get('dms_box',3);
   const ycBox=get('yc_box',1)+get('yc_box',2)+get('yc_box',3);
-  let gjBig=0,gjSmall=0; for(let i=1;i<=5;i++){gjBig+=get('gj_big',i);gjSmall+=get('gj_small',i);}
+  let gjBig=0,gjSmall=0; for(let i=1;i<=7;i++){gjBig+=get('gj_big',i);gjSmall+=get('gj_small',i);}
   const gj=gjBig+gjSmall;
   const scd=get('scd',1)+get('scd',2)+get('scd',3);
   const bc=get('bc',1)+get('bc',2)+get('bc',3);
@@ -1572,7 +1592,7 @@ function resetAll(){
   document.getElementById('note-count').textContent='0';
   colorMap={}; saveColors();
   document.querySelectorAll('.jkg-row,.direct-row,.gj-row,.hj-row').forEach(r=>{
-    r.classList.remove('colored','colored-1','colored-2','colored-3','colored-4','colored-5','colored-6','colored-7','colored-8');
+    r.classList.remove('colored','colored-1','colored-2','colored-3','colored-4','colored-5','colored-6','colored-7','colored-8','colored-10','colored-11');
   });
   localStorage.removeItem(CUR_KEY);
   recalc(); showToast('✅ 작업 초기화 완료');
@@ -1613,7 +1633,7 @@ function openReport(){
     if(ci===-1){rptUniquePlt++;rptJkgUniquePlt++;}
     else{rptMixed.add(ci);rptJkgMixed.add(ci);}
   }
-  for(let i=1;i<=5;i++){
+  for(let i=1;i<=7;i++){
     const bCi=colorMap['gj_big:'+i],sCi=colorMap['gj_small:'+i];
     const bEl=document.querySelector(`[data-group="gj_big"][data-key="${i}"]`);
     const sEl=document.querySelector(`[data-group="gj_small"][data-key="${i}"]`);
@@ -1683,7 +1703,7 @@ function openReport(){
   });
   // 국제
   const gjRows=[];
-  for(let i=1;i<=5;i++){
+  for(let i=1;i<=7;i++){
     const big=parseInt(document.querySelector(`[data-group="gj_big"][data-key="${i}"]`)?.value)||0;
     const small=parseInt(document.querySelector(`[data-group="gj_small"][data-key="${i}"]`)?.value)||0;
     if(big>0||small>0) gjRows.push({num:i,big,small});
@@ -1733,7 +1753,7 @@ function openReport(){
     else{ addMixed(ci,'종근당',gv(inp)); }
   }
   // 국제
-  for(let i=1;i<=5;i++){
+  for(let i=1;i<=7;i++){
     const bCi=colorMap['gj_big:'+i], sCi=colorMap['gj_small:'+i];
     const bEl=document.querySelector(`[data-group="gj_big"][data-key="${i}"]`);
     const sEl=document.querySelector(`[data-group="gj_small"][data-key="${i}"]`);
