@@ -542,7 +542,21 @@ async function loadFbUrl() {
       if (s) { const cfg = JSON.parse(s); if (cfg.firebaseUrl) FB_URL = cfg.firebaseUrl.replace(/\/+$/, ''); }
     } catch {}
   }
-  // 출근부 멤버 동적 로드
+  // 로컬에 없으면 기본 Firebase URL 사용
+  if (!FB_URL) {
+    FB_URL = 'https://ice-work-d8045-default-rtdb.asia-southeast1.firebasedatabase.app';
+  }
+  // Firebase config에서 최신 설정 로드
+  try {
+    const res = await fetch(`${FB_URL}/config.json?t=${Date.now()}`);
+    const cfg = await res.json();
+    if (cfg) {
+      if (cfg.firebaseUrl) { FB_URL = cfg.firebaseUrl.replace(/\/+$/, ''); localStorage.setItem('sys_fb_url', FB_URL); }
+      if (cfg.workers && cfg.workers.length) { ATT_MEMBERS_DASH.length = 0; cfg.workers.forEach(w => ATT_MEMBERS_DASH.push(w)); }
+      if (cfg.startTime) window.SYS_START_TIME = cfg.startTime;
+    }
+  } catch {}
+  // 로컬 폴백
   try {
     const s = localStorage.getItem('sys_config_v1');
     if (s) {
@@ -551,7 +565,6 @@ async function loadFbUrl() {
         ATT_MEMBERS_DASH.length = 0;
         cfg.workers.forEach(w => ATT_MEMBERS_DASH.push(w));
       }
-      // 생산성 시작 시간
       if (cfg.startTime) window.SYS_START_TIME = cfg.startTime;
     }
   } catch {}
