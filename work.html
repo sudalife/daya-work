@@ -436,9 +436,70 @@ input[type="number"].has-val{border-color:var(--a3);color:var(--a3);}
 .order-save-btn{background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;width:100%;margin-bottom:8px;}
 .order-save-status{font-size:11px;color:var(--muted);text-align:center;min-height:16px;}
 
+/* ── 로그인 오버레이 ── */
+#loginOverlay{position:fixed;inset:0;background:#0d1a2a;z-index:9999;display:flex;align-items:center;justify-content:center;}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px 24px;width:300px;max-width:92vw;}
+.login-title{font-size:18px;font-weight:800;color:var(--a1);text-align:center;margin-bottom:20px;}
+.login-tab{display:flex;gap:6px;margin-bottom:16px;}
+.login-tab-btn{flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--muted);}
+.login-tab-btn.active{background:var(--a1);color:#fff;}
+.login-field{margin-bottom:12px;}
+.login-field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;}
+.login-field input,.login-field select{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;}
+.login-btn{width:100%;padding:12px;border:none;border-radius:12px;background:var(--a1);color:#fff;font-size:15px;font-weight:800;cursor:pointer;margin-top:4px;}
+.login-msg{font-size:12px;text-align:center;margin-top:10px;min-height:18px;}
+.login-msg.err{color:#ff6b6b;}
+.login-msg.ok{color:#2ecc71;}
+#pendingScreen{position:fixed;inset:0;background:#0d1a2a;z-index:9999;display:none;align-items:center;justify-content:center;}
+.pending-box{text-align:center;padding:30px;}
+.pending-box h2{color:var(--a1);margin-bottom:12px;}
+.pending-box p{color:var(--muted);font-size:14px;margin-bottom:20px;}
+.pending-logout{background:var(--border);color:var(--text);border:none;padding:10px 24px;border-radius:10px;cursor:pointer;font-size:14px;}
 </style>
 </head>
 <body>
+
+<!-- 로그인 오버레이 -->
+<div id="loginOverlay">
+  <div class="login-box">
+    <div class="login-title">🏭 다야냉장팀</div>
+    <div class="login-tab">
+      <button class="login-tab-btn active" id="tabLoginBtn" onclick="switchLoginTab('login')">로그인</button>
+      <button class="login-tab-btn" id="tabSignupBtn" onclick="switchLoginTab('signup')">가입신청</button>
+    </div>
+    <!-- 로그인 폼 -->
+    <div id="loginForm">
+      <div class="login-field"><label>아이디 (영어)</label><input id="loginId" type="text" placeholder="영어 아이디 입력" autocomplete="off"></div>
+      <div class="login-field"><label>비밀번호 (4자리)</label><input id="loginPw" type="password" placeholder="숫자 4자리" maxlength="4"></div>
+      <div class="login-field">
+        <label>로그인 유지</label>
+        <select id="loginKeep">
+          <option value="0">유지 안 함</option>
+          <option value="1">유지</option>
+        </select>
+      </div>
+      <button class="login-btn" onclick="doLogin()">로그인</button>
+      <div class="login-msg" id="loginMsg"></div>
+    </div>
+    <!-- 가입신청 폼 -->
+    <div id="signupForm" style="display:none">
+      <div class="login-field"><label>아이디 (영어)</label><input id="signupId" type="text" placeholder="사용할 영어 아이디" autocomplete="off"></div>
+      <div class="login-field"><label>비밀번호 (4자리 숫자)</label><input id="signupPw" type="password" placeholder="숫자 4자리" maxlength="4"></div>
+      <div class="login-field"><label>본인 이름 선택</label><select id="signupName"><option value="">이름 선택...</option></select></div>
+      <button class="login-btn" onclick="doSignup()">가입 신청</button>
+      <div class="login-msg" id="signupMsg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 승인 대기 화면 -->
+<div id="pendingScreen" style="display:none">
+  <div class="pending-box">
+    <h2>⏳ 승인 대기 중</h2>
+    <p>가입 신청이 완료됐습니다.<br>관리자 승인 후 이용 가능합니다.</p>
+    <button class="pending-logout" onclick="doLogout()">로그아웃</button>
+  </div>
+</div>
 
 <!-- 색 선택 팝업 -->
 <div class="color-overlay" id="colorOverlay" onclick="closeColorPicker()">
@@ -2083,6 +2144,153 @@ if (window.speechSynthesis) {
 }
 
 // 앱 시작 시 Firebase → 로컬 순으로 데이터 복원
+// ══ 로그인 시스템 ══
+const AUTH_KEY = 'daya_auth';
+
+async function authInit() {
+  // 저장된 로그인 정보 확인
+  const saved = (() => { try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch{} return null; })();
+  if (saved && saved.id) {
+    await checkAuthAndProceed(saved.id, saved.name);
+  } else {
+    showLoginOverlay();
+    loadWorkerListForSignup();
+  }
+}
+
+function showLoginOverlay() {
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('pendingScreen').style.display = 'none';
+}
+
+function switchLoginTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('loginForm').style.display = isLogin ? '' : 'none';
+  document.getElementById('signupForm').style.display = isLogin ? 'none' : '';
+  document.getElementById('tabLoginBtn').classList.toggle('active', isLogin);
+  document.getElementById('tabSignupBtn').classList.toggle('active', !isLogin);
+}
+
+async function loadWorkerListForSignup() {
+  try {
+    // 설정관리에서 작업자 목록 로드
+    const cfgStr = localStorage.getItem('daya_config');
+    let workers = [];
+    if (cfgStr) {
+      const cfg = JSON.parse(cfgStr);
+      workers = cfg.workers || [];
+    } else {
+      const res = await fetch(`${FB_URL}config.json?t=${Date.now()}`);
+      const cfg = await res.json();
+      workers = (cfg && cfg.workers) || [];
+    }
+    const sel = document.getElementById('signupName');
+    workers.forEach(w => {
+      const opt = document.createElement('option');
+      opt.value = w; opt.textContent = w;
+      sel.appendChild(opt);
+    });
+  } catch(e) {}
+}
+
+async function doSignup() {
+  const id = document.getElementById('signupId').value.trim();
+  const pw = document.getElementById('signupPw').value.trim();
+  const name = document.getElementById('signupName').value;
+  const msg = document.getElementById('signupMsg');
+
+  if (!id || !/^[a-zA-Z0-9]+$/.test(id)) { msg.className='login-msg err'; msg.textContent='아이디는 영어/숫자만 가능합니다'; return; }
+  if (pw.length !== 4 || !/^\d{4}$/.test(pw)) { msg.className='login-msg err'; msg.textContent='비밀번호는 숫자 4자리입니다'; return; }
+  if (!name) { msg.className='login-msg err'; msg.textContent='이름을 선택하세요'; return; }
+
+  msg.className='login-msg'; msg.textContent='처리 중...';
+  try {
+    // 중복 확인
+    const check = await fetch(`${FB_URL}users/${id}.json?t=${Date.now()}`);
+    const existing = await check.json();
+    if (existing) { msg.className='login-msg err'; msg.textContent='이미 사용 중인 아이디입니다'; return; }
+
+    // 가입 신청 저장
+    await fetch(`${FB_URL}users/${id}.json`, {
+      method: 'PUT',
+      body: JSON.stringify({ id, pw, name, status: 'pending', createdAt: Date.now() })
+    });
+    localStorage.setItem(AUTH_KEY, JSON.stringify({ id, name }));
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('pendingScreen').style.display = 'flex';
+  } catch(e) {
+    msg.className='login-msg err'; msg.textContent='오류가 발생했습니다. 다시 시도하세요';
+  }
+}
+
+async function doLogin() {
+  const id = document.getElementById('loginId').value.trim();
+  const pw = document.getElementById('loginPw').value.trim();
+  const keep = document.getElementById('loginKeep').value === '1';
+  const msg = document.getElementById('loginMsg');
+
+  if (!id) { msg.className='login-msg err'; msg.textContent='아이디를 입력하세요'; return; }
+  if (!pw) { msg.className='login-msg err'; msg.textContent='비밀번호를 입력하세요'; return; }
+
+  msg.className='login-msg'; msg.textContent='확인 중...';
+  try {
+    const res = await fetch(`${FB_URL}users/${id}.json?t=${Date.now()}`);
+    const user = await res.json();
+    if (!user) { msg.className='login-msg err'; msg.textContent='아이디가 없습니다'; return; }
+    if (user.pw !== pw) { msg.className='login-msg err'; msg.textContent='비밀번호가 틀렸습니다'; return; }
+
+    if (keep) {
+      localStorage.setItem(AUTH_KEY, JSON.stringify({ id, name: user.name }));
+    } else {
+      sessionStorage.setItem(AUTH_KEY, JSON.stringify({ id, name: user.name }));
+      localStorage.removeItem(AUTH_KEY);
+    }
+    await checkAuthAndProceed(id, user.name);
+  } catch(e) {
+    msg.className='login-msg err'; msg.textContent='오류가 발생했습니다';
+  }
+}
+
+async function checkAuthAndProceed(id, name) {
+  try {
+    const res = await fetch(`${FB_URL}users/${id}.json?t=${Date.now()}`);
+    const user = await res.json();
+    if (!user) { doLogout(); return; }
+    if (user.status === 'pending') {
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('pendingScreen').style.display = 'flex';
+      return;
+    }
+    if (user.status === 'approved') {
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('pendingScreen').style.display = 'none';
+      // 작업자 이름 자동 설정
+      setTimeout(() => {
+        const sel = document.getElementById('worker-select');
+        if (sel) {
+          for (let i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].text === user.name) { sel.selectedIndex = i; break; }
+          }
+        }
+      }, 500);
+    } else {
+      doLogout();
+    }
+  } catch(e) {
+    // 오프라인이면 로컬에서 처리
+    const saved = (() => { try { return JSON.parse(localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY)); } catch{} return null; })();
+    if (saved) {
+      document.getElementById('loginOverlay').style.display = 'none';
+    }
+  }
+}
+
+function doLogout() {
+  localStorage.removeItem(AUTH_KEY);
+  sessionStorage.removeItem(AUTH_KEY);
+  location.reload();
+}
+
 (async function initLoad() {
   try {
     const today = new Date();
@@ -2090,7 +2298,6 @@ if (window.speechSynthesis) {
     const res = await fetch(`${FB_URL}history/${dateKey}.json?t=${Date.now()}`);
     const fbData = await res.json();
     if (fbData && fbData.raw) {
-      // Firebase에 오늘 데이터 있으면 적용
       applyData(fbData.raw);
       saveCur();
     } else {
@@ -2102,6 +2309,8 @@ if (window.speechSynthesis) {
   restoreColors(); renderSlots();
   lastData = JSON.stringify(collectData());
   showNoticeIfNeeded();
+  // 로그인 초기화 (데이터 로드 후)
+  await authInit();
 })();
 
 // 헤더에 오늘 날짜 자동 표시
