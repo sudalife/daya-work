@@ -2442,9 +2442,17 @@ async function createPeerConnection(targetId, isInitiator, iceServers) {
       audio = document.createElement('audio');
       audio.id = 'walkie-audio-' + targetId;
       audio.autoplay = true;
+      audio.playsInline = true;
+      audio.muted = false;
       document.body.appendChild(audio);
     }
     audio.srcObject = e.streams[0];
+    audio.play().catch(() => {
+      // autoplay 차단 시 사용자 터치 후 재생
+      const resume = () => { audio.play().catch(()=>{}); document.removeEventListener('touchstart', resume); document.removeEventListener('click', resume); };
+      document.addEventListener('touchstart', resume, {once:true});
+      document.addEventListener('click', resume, {once:true});
+    });
   };
 
   // ICE candidate 전송
@@ -2454,6 +2462,18 @@ async function createPeerConnection(targetId, isInitiator, iceServers) {
         method: 'PUT',
         body: JSON.stringify({ type: 'candidate', candidate: e.candidate, from: myWalkieId })
       });
+    }
+  };
+
+  pc.onconnectionstatechange = () => {
+    const state = pc.connectionState;
+    const statusEl = document.getElementById('walkie-status');
+    if (state === 'connected') {
+      if (statusEl) statusEl.textContent = '🟢 연결됨 (' + Object.keys(peerConnections).length + '명)';
+    } else if (state === 'failed' || state === 'disconnected') {
+      delete peerConnections[targetId];
+      const audioEl = document.getElementById('walkie-audio-' + targetId);
+      if (audioEl) audioEl.remove();
     }
   };
 

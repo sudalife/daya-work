@@ -458,6 +458,23 @@ body { font-family: 'Segoe UI', 'Noto Sans KR', sans-serif; background: var(--bg
     </div>
   </div>
 
+  <!-- 무전기 -->
+  <div class="msg-panel" style="border:1.5px solid rgba(59,158,255,.3);border-radius:14px;padding:16px;background:var(--card);">
+    <div class="msg-panel-title">📻 무전기</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div style="font-size:13px;color:var(--muted);" id="walkie-status">🔴 연결 안됨</div>
+      <button onclick="toggleWalkie()" id="walkie-connect-btn" style="padding:6px 14px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">연결</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;" id="walkie-users">접속자: —</div>
+    <button id="walkie-btn"
+      ontouchstart="startTalk(event)" ontouchend="stopTalk(event)"
+      onmousedown="startTalk(event)" onmouseup="stopTalk(event)" onmouseleave="stopTalk(event)"
+      style="width:100%;padding:16px;border:none;border-radius:12px;background:#334155;color:#94a3b8;font-size:15px;font-weight:900;cursor:pointer;user-select:none;-webkit-user-select:none;">
+      🎙️ 누르는 동안 말하기
+    </button>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;" id="walkie-talking"></div>
+  </div>
+
   <!-- 날짜별 기록 -->
   <div class="history-panel">
     <div class="sec-title">📅 날짜별 기록 <span>최근 30일</span></div>
@@ -976,6 +993,157 @@ function closeAdminConfirm() {
 document.getElementById('admin-confirm-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('admin-confirm-overlay')) closeAdminConfirm();
 });
+
+// ══ 무전기 시스템 ══
+const METERED_API_KEY = 'd729de1c3afd1a54c4d5370b344af4bb8d2c';
+const METERED_APP = 'days.metered.live';
+let walkieConnected = false;
+let localStream = null;
+let peerConnections = {};
+let myWalkieId = 'admin_pc';
+let myWalkieName = '관리자(PC)';
+let walkieWatchInterval = null;
+let isTalking = false;
+
+async function getIceServers() {
+  try {
+    const res = await fetch("https://"+METERED_APP+"/api/v1/turn/credentials?apiKey="+METERED_API_KEY);
+    return await res.json();
+  } catch(e) { return [{urls:"stun:stun.l.google.com:19302"}]; }
+}
+
+async function toggleWalkie() {
+  walkieConnected ? disconnectWalkie() : await connectWalkie();
+}
+
+async function connectWalkie() {
+  const btn = document.getElementById("walkie-connect-btn");
+  const status = document.getElementById("walkie-status");
+  btn.textContent="연결 중..."; btn.disabled=true;
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    localStream.getAudioTracks().forEach(t=>t.enabled=false);
+    await fetch(FB_URL+"walkie/users/"+myWalkieId+".json",{method:"PUT",body:JSON.stringify({name:myWalkieName,joinedAt:Date.now(),talking:false})});
+    const iceServers = await getIceServers();
+    const usersRes = await fetch(FB_URL+"walkie/users.json?t="+Date.now());
+    const users = await usersRes.json()||{};
+    for(const uid of Object.keys(users)){if(uid!==myWalkieId)await createPeerConn(uid,true,iceServers);}
+    startSignalWatch(iceServers);
+    walkieConnected=true;
+    status.textContent="🟢 연결됨";
+    btn.textContent="연결 끊기"; btn.style.background="#ff6b35"; btn.disabled=false;
+    updateWalkieUsers();
+  } catch(e) {
+    status.textContent="❌ 마이크 권한 필요";
+    btn.textContent="연결"; btn.disabled=false;
+    if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
+  }
+}
+
+async function createPeerConn(targetId,isInit,iceServers){
+  const pc=new RTCPeerConnection({iceServers});
+  peerConnections[targetId]=pc;
+  if(localStream)localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+  pc.ontrack=(e)=>{
+    let audio=document.getElementById("walkie-audio-"+targetId);
+    if(!audio){audio=document.createElement("audio");audio.id="walkie-audio-"+targetId;audio.autoplay=true;audio.playsInline=true;audio.muted=false;document.body.appendChild(audio);}
+    audio.srcObject=e.streams[0];
+    audio.play().catch(()=>{
+      const resume=()=>{audio.play().catch(()=>{});document.removeEventListener("touchstart",resume);document.removeEventListener("click",resume);};
+      document.addEventListener("touchstart",resume,{once:true});
+      document.addEventListener("click",resume,{once:true});
+    });
+  };
+  pc.onicecandidate=async(e)=>{
+    if(e.candidate)await fetch(FB_URL+"walkie/signals/"+targetId+"/from_"+myWalkieId+".json",{method:"PUT",body:JSON.stringify({type:"candidate",candidate:e.candidate,from:myWalkieId})});
+  };
+  if(isInit){
+    const offer=await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await fetch(FB_URL+"walkie/signals/"+targetId+"/from_"+myWalkieId+".json",{method:"PUT",body:JSON.stringify({type:"offer",sdp:offer,from:myWalkieId})});
+  }
+  return pc;
+}
+
+function startSignalWatch(iceServers){
+  walkieWatchInterval=setInterval(async()=>{
+    try{
+      const sigRes=await fetch(FB_URL+"walkie/signals/"+myWalkieId+".json?t="+Date.now());
+      const signals=await sigRes.json();
+      if(signals){
+        for(const[key,sig]of Object.entries(signals)){
+          if(!sig||sig.from===myWalkieId)continue;
+          const fromId=sig.from;
+          if(sig.type==="offer"){
+            if(!peerConnections[fromId])await createPeerConn(fromId,false,iceServers);
+            const pc=peerConnections[fromId];
+            await pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
+            const answer=await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await fetch(FB_URL+"walkie/signals/"+fromId+"/from_"+myWalkieId+".json",{method:"PUT",body:JSON.stringify({type:"answer",sdp:answer,from:myWalkieId})});
+          }else if(sig.type==="answer"&&peerConnections[fromId]){
+            const pc=peerConnections[fromId];
+            if(pc.signalingState==="have-local-offer")await pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
+          }else if(sig.type==="candidate"&&peerConnections[fromId]){
+            await peerConnections[fromId].addIceCandidate(new RTCIceCandidate(sig.candidate)).catch(()=>{});
+          }
+          await fetch(FB_URL+"walkie/signals/"+myWalkieId+"/"+key+".json",{method:"DELETE"});
+        }
+      }
+      updateWalkieUsers();
+    }catch(e){}
+  },2000);
+}
+
+async function updateWalkieUsers(){
+  try{
+    const res=await fetch(FB_URL+"walkie/users.json?t="+Date.now());
+    const users=await res.json()||{};
+    const now=Date.now();
+    const active=Object.values(users).filter(u=>now-u.joinedAt<5*60*1000);
+    const talking=active.filter(u=>u.talking).map(u=>u.name);
+    document.getElementById("walkie-users").textContent="접속자: "+(active.length>0?active.map(u=>u.name).join(", "):"없음");
+    document.getElementById("walkie-talking").textContent=talking.length>0?"🔴 "+talking.join(", ")+" 말하는 중...":"";
+  }catch(e){}
+}
+
+async function startTalk(e){
+  e.preventDefault();
+  if(!walkieConnected||isTalking)return;
+  isTalking=true;
+  if(localStream)localStream.getAudioTracks().forEach(t=>t.enabled=true);
+  const btn=document.getElementById("walkie-btn");
+  btn.style.background="#dc2626";btn.style.color="#fff";btn.textContent="🔴 송신 중...";
+  await fetch(FB_URL+"walkie/users/"+myWalkieId+"/talking.json",{method:"PUT",body:"true"});
+}
+
+async function stopTalk(e){
+  e.preventDefault();
+  if(!isTalking)return;
+  isTalking=false;
+  if(localStream)localStream.getAudioTracks().forEach(t=>t.enabled=false);
+  const btn=document.getElementById("walkie-btn");
+  btn.style.background="#334155";btn.style.color="#94a3b8";btn.textContent="🎙️ 누르는 동안 말하기";
+  await fetch(FB_URL+"walkie/users/"+myWalkieId+"/talking.json",{method:"PUT",body:"false"});
+}
+
+async function disconnectWalkie(){
+  if(walkieWatchInterval){clearInterval(walkieWatchInterval);walkieWatchInterval=null;}
+  Object.values(peerConnections).forEach(pc=>pc.close());
+  peerConnections={};
+  document.querySelectorAll("[id^=walkie-audio-]").forEach(el=>el.remove());
+  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
+  if(myWalkieId)await fetch(FB_URL+"walkie/users/"+myWalkieId+".json",{method:"DELETE"}).catch(()=>{});
+  walkieConnected=false;
+  document.getElementById("walkie-status").textContent="🔴 연결 안됨";
+  const btn=document.getElementById("walkie-connect-btn");
+  btn.textContent="연결";btn.style.background="var(--a3)";
+  document.getElementById("walkie-users").textContent="접속자: —";
+  document.getElementById("walkie-talking").textContent="";
+}
+window.addEventListener("beforeunload",()=>{if(walkieConnected)disconnectWalkie();});
+
+
 </script>
 </body>
 </html>
