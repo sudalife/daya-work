@@ -2239,11 +2239,35 @@ async function doLogin() {
     if (!user) { msg.className='login-msg err'; msg.textContent='아이디가 없습니다'; return; }
     if (user.pw !== pw) { msg.className='login-msg err'; msg.textContent='비밀번호가 틀렸습니다'; return; }
 
+    // 중복 로그인 확인
+    if (user.sessionToken) {
+      const myToken = localStorage.getItem('daya_token_' + id) || sessionStorage.getItem('daya_token_' + id);
+      if (!myToken || myToken !== user.sessionToken) {
+        // 다른 기기에서 이미 로그인 중
+        if (!confirm('다른 기기에서 로그인 중입니다.\n기존 기기를 로그아웃하고 이 기기로 로그인할까요?')) {
+          msg.className='login-msg err'; msg.textContent='로그인이 취소됐습니다';
+          return;
+        }
+      }
+    }
+
+    // 새 토큰 발급
+    const newToken = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    const sessionInfo = { token: newToken, loginAt: Date.now(), ua: navigator.userAgent.slice(0,80) };
+
+    // Firebase에 세션 저장
+    user.sessionToken = newToken;
+    user.sessionInfo = sessionInfo;
+    await fetch(`${FB_URL}users/${id}.json`, { method:'PUT', body: JSON.stringify(user) });
+
     if (keep) {
       localStorage.setItem(AUTH_KEY, JSON.stringify({ id, name: user.name }));
+      localStorage.setItem('daya_token_' + id, newToken);
     } else {
       sessionStorage.setItem(AUTH_KEY, JSON.stringify({ id, name: user.name }));
+      sessionStorage.setItem('daya_token_' + id, newToken);
       localStorage.removeItem(AUTH_KEY);
+      localStorage.removeItem('daya_token_' + id);
     }
     await checkAuthAndProceed(id, user.name);
   } catch(e) {
@@ -2262,6 +2286,13 @@ async function checkAuthAndProceed(id, name) {
       return;
     }
     if (user.status === 'approved') {
+      // 토큰 검증 (자동 로그인 시)
+      const myToken = localStorage.getItem('daya_token_' + id) || sessionStorage.getItem('daya_token_' + id);
+      if (myToken && user.sessionToken && myToken !== user.sessionToken) {
+        // 다른 기기가 로그인해서 토큰이 바뀐 경우
+        alert('다른 기기에서 로그인하여 자동 로그아웃됩니다.');
+        doLogout(); return;
+      }
       document.getElementById('loginOverlay').style.display = 'none';
       document.getElementById('pendingScreen').style.display = 'none';
       // 작업자 이름 자동 설정
@@ -2273,11 +2304,25 @@ async function checkAuthAndProceed(id, name) {
           }
         }
       }, 500);
+      // 30초마다 세션 유효성 확인
+      if (!window._sessionWatcher) {
+        window._sessionWatcher = setInterval(async () => {
+          try {
+            const r = await fetch(`${FB_URL}users/${id}.json?t=${Date.now()}`);
+            const u = await r.json();
+            const tk = localStorage.getItem('daya_token_' + id) || sessionStorage.getItem('daya_token_' + id);
+            if (u && tk && u.sessionToken && tk !== u.sessionToken) {
+              clearInterval(window._sessionWatcher);
+              alert('다른 기기에서 로그인하여 자동 로그아웃됩니다.');
+              doLogout();
+            }
+          } catch(e) {}
+        }, 30000);
+      }
     } else {
       doLogout();
     }
   } catch(e) {
-    // 오프라인이면 로컬에서 처리
     const saved = (() => { try { return JSON.parse(localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY)); } catch{} return null; })();
     if (saved) {
       document.getElementById('loginOverlay').style.display = 'none';
