@@ -1173,6 +1173,8 @@ setInterval(pollMessageConfirmation, 30000);
 
 loadFbUrl(); // 설정관리에서 자동 로드
 renderMsgHistory();
+// 무전기 자동 연결 (FB_URL 로드 후)
+setTimeout(() => { if (!walkieConnected) connectWalkie(); }, 2000);
 
 // ══ 무전기 시스템 ══
 const METERED_API_KEY = 'd729de1c3afd1a54c4d5370b344af4bb8d2c';
@@ -1231,7 +1233,7 @@ function createAudio(tid){
 
 async function makePeerConnection(targetId,iceServers){
   if(peerConnections[targetId]){peerConnections[targetId].close();delete peerConnections[targetId];}
-  const pc=new RTCPeerConnection({iceServers,iceCandidatePoolSize:10});
+  const pc=new RTCPeerConnection({iceServers,iceCandidatePoolSize:10,iceTransportPolicy:"all"});
   peerConnections[targetId]=pc;
   if(localStream)localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
   pc.ontrack=(e)=>{

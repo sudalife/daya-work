@@ -2322,6 +2322,8 @@ async function checkAuthAndProceed(id, name) {
             if (sel.options[i].text === user.name) { sel.selectedIndex = i; break; }
           }
         }
+        // 무전기 자동 연결
+        if (!walkieConnected) connectWalkie();
       }, 500);
       // 30초마다 세션 유효성 확인
       if (!window._sessionWatcher) {
@@ -2444,7 +2446,7 @@ async function makePeerConnection(targetId, iceServers) {
     peerConnections[targetId].close();
     delete peerConnections[targetId];
   }
-  const pc = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 10 });
+  const pc = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 10, iceTransportPolicy: 'all' });
   peerConnections[targetId] = pc;
 
   if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
